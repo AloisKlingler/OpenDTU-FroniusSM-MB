@@ -82,7 +82,9 @@ void ModbusDtuClass::init()
     mb.addHreg(0x9c86, 124); //40070
     for (uint16_t i = 40071; i <= 40194; i++) mb.addHreg(i, 0); //40071 - 40194 smartmeter data
     mb.addHreg(0x9d03, 65535); //40195 end block identifier
-    mb.addHreg(0x9d04, 0); //40196    
+    mb.addHreg(0x9d04, 0); //40196  
+    mb.removeHreg(0x9cc1); // do not report 0 values ...
+    mb.removeHreg(0x9cc2); // do not report 0 values ...
 }
 
 void ModbusDtuClass::loop()
@@ -174,8 +176,15 @@ void ModbusDtuClass::loop()
                         // mb.Hreg(0x9cbf, 0);
                         // mb.Hreg(0x9cc0, 0);
                         value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_YT)*1000);
-                        mb.Hreg(0x9cc1, hexbytes[1]);
-                        mb.Hreg(0x9cc2, hexbytes[0]);
+                        if (value == 0) {
+                            mb.removeHreg(0x9cc1);
+                            mb.removeHreg(0x9cc2);
+                        } else {
+                            mb.addHreg(0x9cc1, 0);
+                            mb.addHreg(0x9cc2, 0);
+                            mb.Hreg(0x9cc1, hexbytes[1]);
+                            mb.Hreg(0x9cc2, hexbytes[0]);
+                        }
                     }
                 }
             }
@@ -186,8 +195,15 @@ void ModbusDtuClass::loop()
             mb.Hreg(0x9ca1, hexbytes[1]);
             mb.Hreg(0x9ca2, hexbytes[0]);
             value = (Datastore.getTotalAcYieldTotalEnabled()*1000);
-            mb.Hreg(0x9cc1, hexbytes[1]);
-            mb.Hreg(0x9cc2, hexbytes[0]);
+            if (value == 0) {
+                mb.removeHreg(0x9cc1);
+                mb.removeHreg(0x9cc2);
+            } else {
+                mb.addHreg(0x9cc1, 0);
+                mb.addHreg(0x9cc2, 0);
+                mb.Hreg(0x9cc1, hexbytes[1]);
+                mb.Hreg(0x9cc2, hexbytes[0]);
+            }
         }
     _lastPublish = millis();
     }

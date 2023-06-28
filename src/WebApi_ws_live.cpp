@@ -26,6 +26,7 @@ void WebApiWsLiveClass::init(AsyncWebServer* server)
 
     _server = server;
     _server->on("/api/livedata/status", HTTP_GET, std::bind(&WebApiWsLiveClass::onLivedataStatus, this, _1));
+    _server->on("/api/livedata/totals", HTTP_GET, std::bind(&WebApiWsLiveClass::onLivedataTotals, this, _1));
 
     _server->addHandler(&_ws);
     _ws.onEvent(std::bind(&WebApiWsLiveClass::onWebsocketEvent, this, _1, _2, _3, _4, _5, _6));
@@ -177,6 +178,15 @@ void WebApiWsLiveClass::generateJsonResponse(JsonVariant& root)
     }
 }
 
+void WebApiWsLiveClass::generateJsonResponseTotals(JsonVariant& root)
+{
+    JsonObject totalObj = root.createNestedObject("total");
+    addTotalField(totalObj, "Power", Datastore.getTotalAcPowerEnabled(), "W", Datastore.getTotalAcPowerDigits());
+    addTotalField(totalObj, "YieldDay", Datastore.getTotalAcYieldDayEnabled(), "Wh", Datastore.getTotalAcYieldDayDigits());
+    addTotalField(totalObj, "YieldTotal", Datastore.getTotalAcYieldTotalEnabled(), "kWh", Datastore.getTotalAcYieldTotalDigits());
+
+}
+
 void WebApiWsLiveClass::addField(JsonObject& root, uint8_t idx, std::shared_ptr<InverterAbstract> inv, ChannelType_t type, ChannelNum_t channel, FieldId_t fieldId, String topic)
 {
     if (inv->Statistics()->hasChannelFieldValue(type, channel, fieldId)) {
@@ -231,6 +241,28 @@ void WebApiWsLiveClass::onLivedataStatus(AsyncWebServerRequest* request)
 
     } catch (std::bad_alloc& bad_alloc) {
         MessageOutput.printf("Call to /api/livedata/status temporarely out of resources. Reason: \"%s\".\r\n", bad_alloc.what());
+
+        WebApi.sendTooManyRequests(request);
+    }
+}
+
+void WebApiWsLiveClass::onLivedataTotals(AsyncWebServerRequest* request)
+{
+    if (!WebApi.checkCredentialsReadonly(request)) {
+        return;
+    }
+
+    try {
+        AsyncJsonResponse* response = new AsyncJsonResponse(false, 1024U);
+        JsonVariant root = response->getRoot();
+
+        generateJsonResponseTotals(root);
+
+        response->setLength();
+        request->send(response);
+
+    } catch (std::bad_alloc& bad_alloc) {
+        MessageOutput.printf("Call to /api/livedata/totals temporarely out of resources. Reason: \"%s\".\r\n", bad_alloc.what());
 
         WebApi.sendTooManyRequests(request);
     }
