@@ -9,6 +9,7 @@
 #include "Utils.h"
 #include "defaults.h"
 #include <ETH.h>
+#include <esp_wifi.h>
 
 NetworkSettingsClass::NetworkSettingsClass()
     : apIp(192, 168, 4, 1)
@@ -73,7 +74,7 @@ void NetworkSettingsClass::NetworkEvent(WiFiEvent_t event)
         }
         break;
     case ARDUINO_EVENT_WIFI_STA_GOT_IP:
-        MessageOutput.printf("WiFi got ip: %s\r\n", WiFi.localIP().toString().c_str());
+        MessageOutput.printf("WiFi got ip: %s with RSSI %d dBm\r\n", WiFi.localIP().toString().c_str(), WiFi.RSSI());
         if (_networkMode == network_mode::WiFi) {
             raiseEvent(network_event::NETWORK_GOT_IP);
         }
@@ -230,6 +231,7 @@ void NetworkSettingsClass::applyConfig()
         MessageOutput.print("existing credentials... ");
         WiFi.begin();
     }
+    esp_wifi_set_ps(WIFI_PS_NONE);
     MessageOutput.println("done");
     setStaticIp();
 }
