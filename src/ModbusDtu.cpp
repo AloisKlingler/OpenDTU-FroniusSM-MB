@@ -1,5 +1,6 @@
 #include "ModbusDtu.h"
 #include "Datastore.h"
+//#include "MessageOutput.h"
 
 ModbusIP mb;
 
@@ -89,7 +90,9 @@ void ModbusDtuClass::init()
 
 void ModbusDtuClass::loop()
 {
-    if (millis() - _lastPublish > 5000 && Hoymiles.isAllRadioIdle()) {
+    const CONFIG_T& config = Configuration.get();
+    if (millis() - _lastPublish > (config.Dtu_PollInterval * 1000) && Hoymiles.isAllRadioIdle()) {
+        // MessageOutput.printf("Modbus start %lu\r\n", millis());
         if (Hoymiles.getNumInverters() == 1) {
             auto inv = Hoymiles.getInverterByPos(0);
             if (inv != nullptr) {
@@ -100,7 +103,7 @@ void ModbusDtuClass::loop()
                         value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC));
                         mb.Hreg(0x9c87, hexbytes[1]);
                         mb.Hreg(0x9c88, hexbytes[0]);
-                        value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC_1));
+                        value = ((inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC_1) != 0 ? inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC_1) : inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC)));
                         mb.Hreg(0x9c89, hexbytes[1]);
                         mb.Hreg(0x9c8a, hexbytes[0]);
                         value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC_2));
@@ -109,7 +112,7 @@ void ModbusDtuClass::loop()
                         value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC_3));
                         mb.Hreg(0x9c8d, hexbytes[1]);
                         mb.Hreg(0x9c8e, hexbytes[0]);
-                        value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC_1N));
+                        value = ((inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC_1N) != 0 ? inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC_1N) : inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC)));
                         mb.Hreg(0x9c8f, hexbytes[1]);
                         mb.Hreg(0x9c90, hexbytes[0]);
                         value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC_1N));
@@ -139,7 +142,7 @@ void ModbusDtuClass::loop()
                         value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_PAC)*-1);
                         mb.Hreg(0x9ca1, hexbytes[1]);
                         mb.Hreg(0x9ca2, hexbytes[0]);
-                        value = ((inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC_1)) * (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC_1N)) *-1);
+                        value = (((inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC_1) != 0 ? inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC_1) : inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC))) * (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC_1N)) *-1);
                         mb.Hreg(0x9ca3, hexbytes[1]); 
                         mb.Hreg(0x9ca4, hexbytes[0]);
                         value = ((inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC_2)) * (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC_2N)) *-1);
@@ -182,11 +185,11 @@ void ModbusDtuClass::loop()
                         } else {
                             mb.addHreg(0x9cc1, 0);
                             mb.addHreg(0x9cc2, 0);
-                            mb.Hreg(0x9cc1, hexbytes[1]);
-                            mb.Hreg(0x9cc2, hexbytes[0]);
-                        }
+                        mb.Hreg(0x9cc1, hexbytes[1]);
+                        mb.Hreg(0x9cc2, hexbytes[0]);
                     }
                 }
+            }
             }
         } else {
             float value;
@@ -201,11 +204,12 @@ void ModbusDtuClass::loop()
             } else {
                 mb.addHreg(0x9cc1, 0);
                 mb.addHreg(0x9cc2, 0);
-                mb.Hreg(0x9cc1, hexbytes[1]);
-                mb.Hreg(0x9cc2, hexbytes[0]);
-            }
+            mb.Hreg(0x9cc1, hexbytes[1]);
+            mb.Hreg(0x9cc2, hexbytes[0]);
+        }
         }
     _lastPublish = millis();
+    // MessageOutput.printf("Modbus end %lu\r\n", millis());
     }
     yield();
     mb.task();

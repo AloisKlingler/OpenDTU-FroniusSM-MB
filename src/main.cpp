@@ -151,6 +151,7 @@ void setup()
     // Initialize Modbus
     MessageOutput.print(F("Initialize Modbus... "));
     ModbusDtu.init();
+    MessageOutput.println(F("done"));
     MessageOutput.print(F("Initialize WatchDog... "));
     WatchDogDtu.init();
     MessageOutput.println(F("done"));
