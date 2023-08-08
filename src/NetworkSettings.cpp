@@ -22,6 +22,9 @@ void NetworkSettingsClass::init()
 {
     using std::placeholders::_1;
 
+    WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
+    WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
+
     WiFi.onEvent(std::bind(&NetworkSettingsClass::NetworkEvent, this, _1));
     setupMode();
 }
@@ -122,8 +125,6 @@ void NetworkSettingsClass::setupMode()
         dnsServer->stop();
         dnsServerStatus = false;
         if (_networkMode == network_mode::WiFi) {
-            WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
-            WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
             WiFi.mode(WIFI_STA);
         } else {
             WiFi.mode(WIFI_MODE_NULL);
@@ -140,6 +141,7 @@ void NetworkSettingsClass::enableAdminMode()
 {
     adminEnabled = true;
     adminTimeoutCounter = 0;
+    adminTimeoutCounterMax = Configuration.get().WiFi_ApTimeout * 60;
     setupMode();
 }
 
@@ -159,8 +161,7 @@ void NetworkSettingsClass::loop()
             setStaticIp();
             setHostname();
         }
-    } else
-        if (_networkMode != network_mode::WiFi) {
+    } else if (_networkMode != network_mode::WiFi) {
         // Do stuff when switching to Ethernet mode
         MessageOutput.println("Switch to WiFi mode");
         _networkMode = network_mode::WiFi;
@@ -169,7 +170,12 @@ void NetworkSettingsClass::loop()
     }
 
     if (millis() - lastTimerCall > 1000) {
-        adminTimeoutCounter++;
+        if (adminEnabled && adminTimeoutCounterMax > 0) {
+            adminTimeoutCounter++;
+            if (adminTimeoutCounter % 10 == 0) {
+                MessageOutput.printf("Admin AP remaining seconds: %d / %d\r\n", adminTimeoutCounter, adminTimeoutCounterMax);
+            }
+        }
         connectTimeoutTimer++;
         connectRedoTimer++;
         lastTimerCall = millis();
@@ -179,9 +185,9 @@ void NetworkSettingsClass::loop()
         if (!isConnected()) {
             adminTimeoutCounter = 0;
         }
-        // If WiFi is connected to AP for more than ADMIN_TIMEOUT
+        // If WiFi is connected to AP for more than adminTimeoutCounterMax
         // seconds, disable the internal Access Point
-        if (adminTimeoutCounter > ADMIN_TIMEOUT) {
+        if (adminTimeoutCounter > adminTimeoutCounterMax) {
             adminEnabled = false;
             MessageOutput.println("Admin mode disabled");
             setupMode();
@@ -250,8 +256,7 @@ void NetworkSettingsClass::setHostname()
         WiFi.mode(WIFI_MODE_APSTA);
         WiFi.mode(WIFI_MODE_STA);
         setupMode();
-    }
-    else if (_networkMode == network_mode::Ethernet) {
+    } else if (_networkMode == network_mode::Ethernet) {
         if (ETH.setHostname(getHostname().c_str())) {
             MessageOutput.println("done");
         } else {
@@ -277,8 +282,7 @@ void NetworkSettingsClass::setStaticIp()
                 IPAddress(Configuration.get().WiFi_Dns2));
             MessageOutput.println("done");
         }
-    }
-    else if (_networkMode == network_mode::Ethernet) {
+    } else if (_networkMode == network_mode::Ethernet) {
         if (Configuration.get().WiFi_Dhcp) {
             MessageOutput.print("Configuring Ethernet DHCP IP... ");
             ETH.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
