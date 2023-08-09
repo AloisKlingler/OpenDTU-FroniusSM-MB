@@ -112,10 +112,10 @@ void ModbusDtuClass::loop()
                         value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC_3));
                         mb.Hreg(0x9c8d, hexbytes[1]);
                         mb.Hreg(0x9c8e, hexbytes[0]);
-                        value = ((inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC_1N) != 0 ? inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC_1N) : inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC)));
+                        value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC_1N));
                         mb.Hreg(0x9c8f, hexbytes[1]);
                         mb.Hreg(0x9c90, hexbytes[0]);
-                        value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC_1N));
+                        value = ((inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC_1N) != 0 ? inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC_1N) : inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC)));
                         mb.Hreg(0x9c91, hexbytes[1]);
                         mb.Hreg(0x9c92, hexbytes[0]);
                         value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC_2N));
@@ -142,7 +142,8 @@ void ModbusDtuClass::loop()
                         value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_PAC)*-1);
                         mb.Hreg(0x9ca1, hexbytes[1]);
                         mb.Hreg(0x9ca2, hexbytes[0]);
-                        value = (((inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC_1) != 0 ? inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC_1) : inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC))) * (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC_1N)) *-1);
+                        if (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC_1) != 0) value = ((inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC_1)) * (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC_1N)) *-1);
+                        else value = ((inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC)) * (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC)) *-1);
                         mb.Hreg(0x9ca3, hexbytes[1]); 
                         mb.Hreg(0x9ca4, hexbytes[0]);
                         value = ((inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC_2)) * (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC_2N)) *-1);
