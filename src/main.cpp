@@ -175,6 +175,8 @@ void loop()
             ModbusDtu.init();
             MessageOutput.println(F("done"));
             yield();
+            ModbusDtu.loop();
+            yield();
         }
     }
     MqttHandleDtu.loop();
