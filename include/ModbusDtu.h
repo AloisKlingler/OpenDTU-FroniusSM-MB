@@ -9,10 +9,11 @@ class ModbusDtuClass {
 public:
     void init();
     void loop();
+    bool isrunning();
 
 private:
     uint32_t _lastPublish;
-    uint8_t _channels;
+    bool _isstarted = false;
 };
 
 extern ModbusDtuClass ModbusDtu;

@@ -149,9 +149,9 @@ void setup()
     Datastore.init();
 
     // Initialize Modbus
-    MessageOutput.print(F("Initialize Modbus... "));
-    ModbusDtu.init();
-    MessageOutput.println(F("done"));
+    // MessageOutput.print(F("Initialize Modbus... "));
+    // ModbusDtu.init();
+    // MessageOutput.println(F("done"));
     MessageOutput.print(F("Initialize WatchDog... "));
     WatchDogDtu.init();
     MessageOutput.println(F("done"));
@@ -164,10 +164,19 @@ void loop()
     yield();
     InverterSettings.loop();
     yield();
-    ModbusDtu.loop();
-    yield();
     Datastore.loop();
     yield();
+    if (ModbusDtu.isrunning()) {
+        ModbusDtu.loop();
+        yield();
+    } else {
+        if (Datastore.getIsAllEnabledReachable() && Datastore.getTotalAcYieldTotalEnabled() != 0) {
+            MessageOutput.print(F("Initialize Modbus... "));
+            ModbusDtu.init();
+            MessageOutput.println(F("done"));
+            yield();
+        }
+    }
     MqttHandleDtu.loop();
     yield();
     MqttHandleInverter.loop();
