@@ -1,4 +1,5 @@
 #include <WatchDogDtu.h>
+#include <Arduino.h>
 
 //3 seconds WDT
 #define WDT_TIMEOUT 30

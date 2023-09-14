@@ -166,19 +166,8 @@ void loop()
     yield();
     Datastore.loop();
     yield();
-    if (ModbusDtu.isrunning()) {
-        ModbusDtu.loop();
-        yield();
-    } else {
-        if (Datastore.getIsAllEnabledReachable() && Datastore.getTotalAcYieldTotalEnabled() != 0) {
-            MessageOutput.print(F("Initialize Modbus... "));
-            ModbusDtu.init();
-            MessageOutput.println(F("done"));
-            yield();
-            ModbusDtu.loop();
-            yield();
-        }
-    }
+    ModbusDtu.loop();
+    yield();
     MqttHandleDtu.loop();
     yield();
     MqttHandleInverter.loop();
