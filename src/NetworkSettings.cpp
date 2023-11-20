@@ -8,6 +8,7 @@
 #include "PinMapping.h"
 #include "Utils.h"
 #include "defaults.h"
+#include <ESPmDNS.h>
 #include <ETH.h>
 #include <esp_wifi.h>
 
@@ -111,6 +112,35 @@ void NetworkSettingsClass::raiseEvent(network_event event)
     }
 }
 
+void NetworkSettingsClass::handleMDNS()
+{
+    bool mdnsEnabled = Configuration.get().Mdns_Enabled;
+
+    if (lastMdnsEnabled == mdnsEnabled) {
+        return;
+    }
+
+    lastMdnsEnabled = mdnsEnabled;
+
+    MDNS.end();
+
+    if (!mdnsEnabled) {
+        return;
+    }
+
+    if (MDNS.begin(getHostname())) {
+        MessageOutput.print("MDNS responder starting...");
+
+        MDNS.addService("http", "tcp", 80);
+        MDNS.addService("opendtu", "tcp", 80);
+        MDNS.addServiceTxt("opendtu", "tcp", "git_hash", AUTO_GIT_HASH);
+
+        MessageOutput.println("done");
+    } else {
+        MessageOutput.println("Error setting up MDNS responder!");
+    }
+}
+
 void NetworkSettingsClass::setupMode()
 {
     if (adminEnabled) {
@@ -122,8 +152,8 @@ void NetworkSettingsClass::setupMode()
         dnsServer->start(DNS_PORT, "*", WiFi.softAPIP());
         dnsServerStatus = true;
     } else {
-        dnsServer->stop();
         dnsServerStatus = false;
+        dnsServer->stop();
         if (_networkMode == network_mode::WiFi) {
             WiFi.mode(WIFI_STA);
         } else {
@@ -219,6 +249,8 @@ void NetworkSettingsClass::loop()
     if (dnsServerStatus) {
         dnsServer->processNextRequest();
     }
+
+    handleMDNS();
 }
 
 void NetworkSettingsClass::applyConfig()
