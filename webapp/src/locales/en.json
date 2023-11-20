@@ -404,7 +404,9 @@
         "Minutes": "minutes",
         "Save": "@:dtuadmin.Save",
         "EnableMdns": "Enable mDNS",
-        "MdnsSettings": "mDNS Settings"
+        "MdnsSettings": "mDNS Settings",
+        "ModbusSettings": "Modbus Settings",
+        "EnableFroniusSM": "Enable Fronius SmartMeter simulation"
     },
     "mqttadmin": {
         "MqttSettings": "MQTT Settings",

@@ -404,7 +404,9 @@
         "Minutes": "Minuten",
         "Save": "@:dtuadmin.Save",
         "EnableMdns": "mDNS aktivieren",
-        "MdnsSettings": "mDNS-Einstellungen"
+        "MdnsSettings": "mDNS-Einstellungen",
+        "ModbusSettings": "Modbus-Einstellungen",
+        "EnableFroniusSM": "Fronius SmartMeter Simulation aktivieren"
     },
     "mqttadmin": {
         "MqttSettings": "MQTT-Einstellungen",
