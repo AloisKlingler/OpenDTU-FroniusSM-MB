@@ -45,7 +45,7 @@ void ModbusDtuClass::init()
     // mb.addHreg(0x9c78, 13360); //                          3430 == 40
     // mb.addHreg(0x9c79, 0);
     char buff[24];
-    uint16_t *hexbytes = (uint16_t *)buff;
+    uint16_t *hexbytes = reinterpret_cast<uint16_t *>(buff);
     snprintf(buff,sizeof(buff),"%llx",(Configuration.get().Dtu.Serial));
     MessageOutput.printf("Fronius SM Simulation init uses DTU Serial: %llx\r\n", Configuration.get().Dtu.Serial);
     MessageOutput.printf("Writing to modbus registers: %d %d %d %d %d %d\r\n", ntohs(hexbytes[0]), ntohs(hexbytes[1]), ntohs(hexbytes[2]), ntohs(hexbytes[3]), ntohs(hexbytes[4]), ntohs(hexbytes[5]));
@@ -77,7 +77,7 @@ void ModbusDtuClass::loop()
 
     if (millis() - _lastPublish > ((Configuration.get().Dtu.PollInterval) * 1000) && Hoymiles.isAllRadioIdle()) {
             float value;
-            uint16_t *hexbytes = (uint16_t *)&value;
+            uint16_t *hexbytes = reinterpret_cast<uint16_t *>(&value);
             value = (Datastore.getTotalAcPowerEnabled()*-1);
             //MessageOutput.printf("modbus write %.2f to 40097 and 40098\r\n", value);
             mb.Hreg(0x9ca1, hexbytes[1]);
