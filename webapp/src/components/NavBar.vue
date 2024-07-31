@@ -1,24 +1,23 @@
 <template>
     <nav class="navbar navbar-expand-md fixed-top bg-body-tertiary" data-bs-theme="dark">
         <div class="container-fluid">
-            <router-link @click="onClick" class="navbar-brand" to="/">
-                <span v-if="isXmas" class="text-success">
-                    <BIconTree width="30" height="30" class="d-inline-block align-text-top" />
+            <router-link @click="onClick" class="navbar-brand" to="/" style="display: flex; height: 30px; padding: 0;">
+                <BIconTree v-if="isXmas" width="30" height="30" class="d-inline-block align-text-top text-success" />
+
+                <BIconEgg v-else-if="isEaster" width="30" height="30" class="d-inline-block align-text-top text-info" />
+
+                <BIconSun v-else width="30" height="30" class="d-inline-block align-text-top text-warning" />
+
+                <span style="margin-left: .5rem">
+                    OpenDTU
                 </span>
-                <span v-else-if="isEaster" class="text-info">
-                    <BIconEgg width="30" height="30" class="d-inline-block align-text-top" />
-                </span>
-                <span v-else class="text-warning">
-                    <BIconSun width="30" height="30" class="d-inline-block align-text-top" />
-                </span>
-                 OpenDTU
             </router-link>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup"
                 aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" ref="navbarCollapse" id="navbarNavAltMarkup">
-                <ul class="navbar-nav me-auto">
+                <ul class="navbar-nav navbar-nav-scroll d-flex me-auto flex-sm-fill">
                     <li class="nav-item">
                         <router-link @click="onClick" class="nav-link" to="/">{{ $t('menu.LiveView') }}</router-link>
                     </li>
@@ -94,8 +93,7 @@
                     <li class="nav-item">
                         <router-link @click="onClick" class="nav-link" to="/about">{{ $t('menu.About') }}</router-link>
                     </li>
-                </ul>
-                <ul class="navbar-nav flex-row flex-wrap ms-md-auto">
+                    <li class="flex-sm-fill"></li>
                     <ThemeSwitcher class="me-2" />
                     <form class="d-flex" role="search">
                         <LocaleSwitcher class="me-2" />
@@ -148,8 +146,8 @@ export default defineComponent({
         },
         isEaster() {
             const easter = this.getEasterSunday(this.now.getFullYear());
-            var easterStart = new Date(easter);
-            var easterEnd = new Date(easter);
+            const easterStart = new Date(easter);
+            const easterEnd = new Date(easter);
             easterStart.setDate(easterStart.getDate() - 2);
             easterEnd.setDate(easterEnd.getDate() + 1);
             return this.now >= easterStart && this.now < easterEnd;
@@ -172,15 +170,15 @@ export default defineComponent({
             this.$refs.navbarCollapse && (this.$refs.navbarCollapse as HTMLElement).classList.remove("show");
         },
         getEasterSunday(year: number): Date {
-            var f = Math.floor;
-            var G = year % 19;
-            var C = f(year / 100);
-            var H = (C - f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30;
-            var I = H - f(H / 28) * (1 - f(29 / (H + 1)) * f((21 - G) / 11));
-            var J = (year + f(year / 4) + I + 2 - C + f(C / 4)) % 7;
-            var L = I - J;
-            var month = 3 + f((L + 40) / 44);
-            var day = L + 28 - 31 * f(month / 4);
+            const f = Math.floor;
+            const G = year % 19;
+            const C = f(year / 100);
+            const H = (C - f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30;
+            const I = H - f(H / 28) * (1 - f(29 / (H + 1)) * f((21 - G) / 11));
+            const J = (year + f(year / 4) + I + 2 - C + f(C / 4)) % 7;
+            const L = I - J;
+            const month = 3 + f((L + 40) / 44);
+            const day = L + 28 - 31 * f(month / 4);
 
             return new Date(year, month - 1, day);
         }

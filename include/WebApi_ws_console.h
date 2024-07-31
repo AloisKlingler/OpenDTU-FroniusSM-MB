@@ -2,18 +2,16 @@
 #pragma once
 
 #include <ESPAsyncWebServer.h>
+#include <TaskSchedulerDeclarations.h>
 
 class WebApiWsConsoleClass {
 public:
     WebApiWsConsoleClass();
-    void init(AsyncWebServer* server);
-    void loop();
+    void init(AsyncWebServer& server, Scheduler& scheduler);
 
 private:
-    void onWebsocketEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);
-
-    AsyncWebServer* _server;
     AsyncWebSocket _ws;
 
-    uint32_t _lastWsCleanup = 0;
+    Task _wsCleanupTask;
+    void wsCleanupTaskCb();
 };
