@@ -11,7 +11,7 @@ public:
     void loop();
 
 private:
-    uint32_t _lastPublish = 0;
+    uint32_t _lastPublish;
     bool _isstarted = false;
 };
 
