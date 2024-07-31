@@ -1,5 +1,6 @@
 #include "ModbusDtu.h"
 #include "Datastore.h"
+//#include "MessageOutput.h"
 
 ModbusIP mb;
 
@@ -8,7 +9,7 @@ ModbusDtuClass ModbusDtu;
 void ModbusDtuClass::init()
 {
     mb.server();
-    //const CONFIG_T& config = Configuration.get();
+    const CONFIG_T& config = Configuration.get();
     mb.addHreg(0x9c40, 21365); //40000
     mb.addHreg(0x9c41, 28243); 
     mb.addHreg(0x9c42, 1);
@@ -17,7 +18,18 @@ void ModbusDtuClass::init()
     mb.addHreg(0x9c45, 28526); //                         6f6e == on
     mb.addHreg(0x9c46, 26997); //                         6975 == iu
     mb.addHreg(0x9c47, 29440); //                         7300 == s
-    mb.addHreg(0x9c48, 0, 12); //40019 Manufacturer end
+    mb.addHreg(0x9c48, 0); 
+    mb.addHreg(0x9c49, 0); 
+    mb.addHreg(0x9c4a, 0); 
+    mb.addHreg(0x9c4b, 0); 
+    mb.addHreg(0x9c4c, 0); 
+    mb.addHreg(0x9c4d, 0); 
+    mb.addHreg(0x9c4e, 0); 
+    mb.addHreg(0x9c4f, 0); 
+    mb.addHreg(0x9c50, 0); 
+    mb.addHreg(0x9c51, 0); 
+    mb.addHreg(0x9c52, 0);  
+    mb.addHreg(0x9c53, 0); //40019 Manufacturer end
     mb.addHreg(0x9c54, 21357); //40020 Device Model start 536d == Sm
     mb.addHreg(0x9c55, 24946); //                         6172 == ar
     mb.addHreg(0x9c56, 29728); //                         7420 == t 
@@ -28,54 +40,63 @@ void ModbusDtuClass::init()
     mb.addHreg(0x9c5b, 8246);  //                         2036 ==  6
     mb.addHreg(0x9c5c, 13633); //                         3541 == 5A
     mb.addHreg(0x9c5d, 11571); //                         2d33 == -3
-    mb.addHreg(0x9c5e, 0, 6); //40035 Device Model end
+    mb.addHreg(0x9c5e, 0); 
+    mb.addHreg(0x9c5f, 0); 
+    mb.addHreg(0x9c60, 0); 
+    mb.addHreg(0x9c61, 0); 
+    mb.addHreg(0x9c62, 0);  
+    mb.addHreg(0x9c63, 0); //40035 Device Model end
     mb.addHreg(0x9c64, 15472); //40036 Options start 3c70 == <p
     mb.addHreg(0x9c65, 29289); //                    7269 == ri
     mb.addHreg(0x9c66, 28001); //                    6d61 == ma
     mb.addHreg(0x9c67, 29305); //                    7279 == ry
     mb.addHreg(0x9c68, 15872); //                    3E00 == >
-    mb.addHreg(0x9c69, 0, 3); //40043 Options end
+    mb.addHreg(0x9c69, 0); 
+    mb.addHreg(0x9c6a, 0); 
+    mb.addHreg(0x9c6b, 0); //40043 Options end
     mb.addHreg(0x9c6c, 12590); //40044 Software Version start 312e == 1.
     mb.addHreg(0x9c6d, 13056); //                             3300 == 3
-    mb.addHreg(0x9c6e, 0, 6); //40051 Software Version N/A end
+    mb.addHreg(0x9c6e, 0); 
+    mb.addHreg(0x9c6f, 0); 
+    mb.addHreg(0x9c70, 0); 
+    mb.addHreg(0x9c71, 0); 
+    mb.addHreg(0x9c72, 0);  
+    mb.addHreg(0x9c73, 0); //40051 Software Version N/A end
     mb.addHreg(0x9c74, 12850); //40052 Serial Number start 3232 == 22
     mb.addHreg(0x9c75, 13362); //                          3432 == 42
     mb.addHreg(0x9c76, 13111); //                          3337 == 37
     mb.addHreg(0x9c77, 12851); //                          3233 == 23
     mb.addHreg(0x9c78, 13360); //                          3430 == 40
     mb.addHreg(0x9c79, 0);
-    mb.addHreg(0x9c7a, 0, 10); //40067 Serial Number end
+    mb.addHreg(0x9c7a, 0); 
+    mb.addHreg(0x9c7b, 0); 
+    mb.addHreg(0x9c7c, 0); 
+    mb.addHreg(0x9c7d, 0); 
+    mb.addHreg(0x9c7e, 0); 
+    mb.addHreg(0x9c7f, 0); 
+    mb.addHreg(0x9c80, 0); 
+    mb.addHreg(0x9c81, 0); 
+    mb.addHreg(0x9c82, 0);  
+    mb.addHreg(0x9c83, 0); //40067 Serial Number end
     mb.addHreg(0x9c84, 202); //40068 Modbus TCP Address: 202
     mb.addHreg(0x9c85, 213); //40069
     mb.addHreg(0x9c86, 124); //40070
-    mb.addHreg(40071, 0, 123); //40071 - 40194 smartmeter data
+    for (uint16_t i = 40071; i <= 40194; i++) mb.addHreg(i, 0); //40071 - 40194 smartmeter data
     mb.addHreg(0x9d03, 65535); //40195 end block identifier
     mb.addHreg(0x9d04, 0); //40196  
     _isstarted = true;
 }
 
+bool ModbusDtuClass::isrunning(){
+    return _isstarted;
+}
+
 void ModbusDtuClass::loop()
 {
-    if (!_isstarted) {
-        if (Datastore.getIsAllEnabledReachable() && Datastore.getTotalAcYieldTotalEnabled() != 0) {
-            ModbusDtu.init();
-            yield();
-        } else return;
-    }
-
+    if (!_isstarted) return;
     const CONFIG_T& config = Configuration.get();
     if (millis() - _lastPublish > (config.Dtu_PollInterval * 1000) && Hoymiles.isAllRadioIdle()) {
-            float value;
-            uint16_t *hexbytes = (uint16_t *)&value;
-            value = (Datastore.getTotalAcPowerEnabled()*-1);
-            mb.Hreg(0x9ca1, hexbytes[1]);
-            mb.Hreg(0x9ca2, hexbytes[0]);
-            value = (Datastore.getTotalAcYieldTotalEnabled()*1000);
-            if (value != 0 && Datastore.getIsAllEnabledReachable()) {
-                mb.Hreg(0x9cc1, hexbytes[1]);
-                mb.Hreg(0x9cc2, hexbytes[0]);
-            }
-        /*
+        // MessageOutput.printf("Modbus start %lu\r\n", millis());
         if (Hoymiles.getNumInverters() == 1) {
             auto inv = Hoymiles.getInverterByPos(0);
             if (inv != nullptr) {
@@ -180,8 +201,9 @@ void ModbusDtuClass::loop()
                 mb.Hreg(0x9cc1, hexbytes[1]);
                 mb.Hreg(0x9cc2, hexbytes[0]);
             }
-        }*/
+        }
     _lastPublish = millis();
+    // MessageOutput.printf("Modbus end %lu\r\n", millis());
     }
     yield();
     mb.task();
