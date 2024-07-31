@@ -10,11 +10,7 @@
 #include "defaults.h"
 #include <ESPmDNS.h>
 #include <ETH.h>
-<<<<<<< HEAD
-#include <esp_wifi.h>
-=======
 #include "__compiled_constants.h"
->>>>>>> e541a885f51dcd3b88195ff4fa01a0f413889807
 
 NetworkSettingsClass::NetworkSettingsClass()
     : _loopTask(TASK_IMMEDIATE, TASK_FOREVER, std::bind(&NetworkSettingsClass::loop, this))
@@ -86,7 +82,7 @@ void NetworkSettingsClass::NetworkEvent(const WiFiEvent_t event)
         }
         break;
     case ARDUINO_EVENT_WIFI_STA_GOT_IP:
-        MessageOutput.printf("WiFi got ip: %s with RSSI %d dBm\r\n", WiFi.localIP().toString().c_str(), WiFi.RSSI());
+        MessageOutput.printf("WiFi got ip: %s\r\n", WiFi.localIP().toString().c_str());
         if (_networkMode == network_mode::WiFi) {
             raiseEvent(network_event::NETWORK_GOT_IP);
         }
@@ -278,7 +274,6 @@ void NetworkSettingsClass::applyConfig()
         MessageOutput.print("existing credentials... ");
         WiFi.begin();
     }
-    esp_wifi_set_ps(WIFI_PS_NONE);
     MessageOutput.println("done");
     setStaticIp();
 }

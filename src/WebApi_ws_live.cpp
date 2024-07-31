@@ -26,13 +26,7 @@ void WebApiWsLiveClass::init(AsyncWebServer& server, Scheduler& scheduler)
     using std::placeholders::_5;
     using std::placeholders::_6;
 
-<<<<<<< HEAD
-    _server = server;
-    _server->on("/api/livedata/status", HTTP_GET, std::bind(&WebApiWsLiveClass::onLivedataStatus, this, _1));
-    _server->on("/api/livedata/totals", HTTP_GET, std::bind(&WebApiWsLiveClass::onLivedataTotals, this, _1));
-=======
     server.on("/api/livedata/status", HTTP_GET, std::bind(&WebApiWsLiveClass::onLivedataStatus, this, _1));
->>>>>>> e541a885f51dcd3b88195ff4fa01a0f413889807
 
     server.addHandler(&_ws);
     _ws.onEvent(std::bind(&WebApiWsLiveClass::onWebsocketEvent, this, _1, _2, _3, _4, _5, _6));
@@ -142,18 +136,6 @@ void WebApiWsLiveClass::generateInverterCommonJsonResponse(JsonObject& root, std
     }
 }
 
-<<<<<<< HEAD
-void WebApiWsLiveClass::generateJsonResponseTotals(JsonVariant& root)
-{
-    JsonObject totalObj = root.createNestedObject("total");
-    addTotalField(totalObj, "Power", Datastore.getTotalAcPowerEnabled(), "W", Datastore.getTotalAcPowerDigits());
-    addTotalField(totalObj, "YieldDay", Datastore.getTotalAcYieldDayEnabled(), "Wh", Datastore.getTotalAcYieldDayDigits());
-    addTotalField(totalObj, "YieldTotal", Datastore.getTotalAcYieldTotalEnabled(), "kWh", Datastore.getTotalAcYieldTotalDigits());
-
-}
-
-void WebApiWsLiveClass::addField(JsonObject& root, uint8_t idx, std::shared_ptr<InverterAbstract> inv, ChannelType_t type, ChannelNum_t channel, FieldId_t fieldId, String topic)
-=======
 void WebApiWsLiveClass::generateInverterChannelJsonResponse(JsonObject& root, std::shared_ptr<InverterAbstract> inv)
 {
     const INVERTER_CONFIG_T* inv_cfg = Configuration.getInverterConfig(inv->serial());
@@ -200,7 +182,6 @@ void WebApiWsLiveClass::generateInverterChannelJsonResponse(JsonObject& root, st
 }
 
 void WebApiWsLiveClass::addField(JsonObject& root, std::shared_ptr<InverterAbstract> inv, const ChannelType_t type, const ChannelNum_t channel, const FieldId_t fieldId, String topic)
->>>>>>> e541a885f51dcd3b88195ff4fa01a0f413889807
 {
     if (inv->Statistics()->hasChannelFieldValue(type, channel, fieldId)) {
         String chanName;
@@ -278,28 +259,3 @@ void WebApiWsLiveClass::onLivedataStatus(AsyncWebServerRequest* request)
         WebApi.sendTooManyRequests(request);
     }
 }
-<<<<<<< HEAD
-
-void WebApiWsLiveClass::onLivedataTotals(AsyncWebServerRequest* request)
-{
-    if (!WebApi.checkCredentialsReadonly(request)) {
-        return;
-    }
-
-    try {
-        AsyncJsonResponse* response = new AsyncJsonResponse(false, 1024U);
-        JsonVariant root = response->getRoot();
-
-        generateJsonResponseTotals(root);
-
-        response->setLength();
-        request->send(response);
-
-    } catch (std::bad_alloc& bad_alloc) {
-        MessageOutput.printf("Call to /api/livedata/totals temporarely out of resources. Reason: \"%s\".\r\n", bad_alloc.what());
-
-        WebApi.sendTooManyRequests(request);
-    }
-}
-=======
->>>>>>> e541a885f51dcd3b88195ff4fa01a0f413889807

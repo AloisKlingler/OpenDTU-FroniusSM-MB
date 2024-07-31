@@ -432,7 +432,9 @@
         "ApTimeoutHint": "Durée pendant laquelle le point d'accès reste ouvert. Une valeur de 0 signifie infini.",
         "Minutes": "minutes",
         "EnableMdns": "Activer mDNS",
-        "MdnsSettings": "mDNS Settings"
+        "MdnsSettings": "mDNS Settings",
+        "ModbusSettings": "Modbus Settings",
+        "EnableFroniusSM": "Activer Fronius SmartMeter simulation"
     },
     "mqttadmin": {
         "MqttSettings": "Paramètres MQTT",
