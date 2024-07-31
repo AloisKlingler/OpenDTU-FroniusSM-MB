@@ -22,8 +22,6 @@
 
 #define MDNS_ENABLED false
 
-#define FRONIUS_SM_SIMULATION_ENABLED false
-
 #define NTP_SERVER "pool.ntp.org"
 #define NTP_TIMEZONE "CET-1CEST,M3.5.0,M10.5.0/3"
 #define NTP_TIMEZONEDESCR "Europe/Berlin"

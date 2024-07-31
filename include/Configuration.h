@@ -68,8 +68,6 @@ struct CONFIG_T {
 
     bool Mdns_Enabled;
 
-    bool Fronius_SM_Simulation_Enabled;
-
     char Ntp_Server[NTP_MAX_SERVER_STRLEN + 1];
     char Ntp_Timezone[NTP_MAX_TIMEZONE_STRLEN + 1];
     char Ntp_TimezoneDescr[NTP_MAX_TIMEZONEDESCR_STRLEN + 1];

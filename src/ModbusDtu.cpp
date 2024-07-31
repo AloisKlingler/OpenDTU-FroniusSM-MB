@@ -8,6 +8,7 @@ ModbusDtuClass ModbusDtu;
 void ModbusDtuClass::init()
 {
     mb.server();
+    //const CONFIG_T& config = Configuration.get();
     mb.addHreg(0x9c40, 21365); //40000
     mb.addHreg(0x9c41, 28243); 
     mb.addHreg(0x9c42, 1);
@@ -55,7 +56,6 @@ void ModbusDtuClass::init()
 
 void ModbusDtuClass::loop()
 {
-    if (!(Configuration.get().Fronius_SM_Simulation_Enabled)) return;
     if (!_isstarted) {
         if (Datastore.getIsAllEnabledReachable() && Datastore.getTotalAcYieldTotalEnabled() != 0) {
             ModbusDtu.init();
@@ -63,7 +63,8 @@ void ModbusDtuClass::loop()
         } else return;
     }
 
-    if (millis() - _lastPublish > ((Configuration.get().Dtu_PollInterval) * 1000) && Hoymiles.isAllRadioIdle()) {
+    const CONFIG_T& config = Configuration.get();
+    if (millis() - _lastPublish > (config.Dtu_PollInterval * 1000) && Hoymiles.isAllRadioIdle()) {
             float value;
             uint16_t *hexbytes = (uint16_t *)&value;
             value = (Datastore.getTotalAcPowerEnabled()*-1);

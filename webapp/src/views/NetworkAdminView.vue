@@ -56,12 +56,6 @@
                               type="checkbox"/>
             </CardElement>
 
-            <CardElement :text="$t('networkadmin.ModbusSettings')" textVariant="text-bg-primary" add-space>
-                <InputElement :label="$t('networkadmin.EnableFroniusSM')"
-                              v-model="networkConfigList.froniussmmodbusenabled"
-                              type="checkbox"/>
-            </CardElement>
-
             <CardElement :text="$t('networkadmin.AdminAp')" textVariant="text-bg-primary" add-space>
                 <InputElement :label="$t('networkadmin.ApTimeout')"
                               v-model="networkConfigList.aptimeout"
