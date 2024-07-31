@@ -197,7 +197,7 @@ void ModbusDtuClass::loop()
             mb.Hreg(0x9ca1, hexbytes[1]);
             mb.Hreg(0x9ca2, hexbytes[0]);
             value = (Datastore.getTotalAcYieldTotalEnabled()*1000);
-            if (value != 0 && Datastore.getIsAllEnabledReachable()) {
+            if (value != 0) {
                 mb.Hreg(0x9cc1, hexbytes[1]);
                 mb.Hreg(0x9cc2, hexbytes[0]);
             }
