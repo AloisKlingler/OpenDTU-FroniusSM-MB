@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (C) 2022 Thomas Basler and others
+ * Copyright (C) 2022-2024 Thomas Basler and others
  */
 #include "WebApi_config.h"
 #include "Configuration.h"
@@ -10,7 +10,7 @@
 #include <AsyncJson.h>
 #include <LittleFS.h>
 
-void WebApiConfigClass::init(AsyncWebServer* server)
+void WebApiConfigClass::init(AsyncWebServer& server, Scheduler& scheduler)
 {
     using std::placeholders::_1;
     using std::placeholders::_2;
@@ -19,18 +19,12 @@ void WebApiConfigClass::init(AsyncWebServer* server)
     using std::placeholders::_5;
     using std::placeholders::_6;
 
-    _server = server;
-
-    _server->on("/api/config/get", HTTP_GET, std::bind(&WebApiConfigClass::onConfigGet, this, _1));
-    _server->on("/api/config/delete", HTTP_POST, std::bind(&WebApiConfigClass::onConfigDelete, this, _1));
-    _server->on("/api/config/list", HTTP_GET, std::bind(&WebApiConfigClass::onConfigListGet, this, _1));
-    _server->on("/api/config/upload", HTTP_POST,
+    server.on("/api/config/get", HTTP_GET, std::bind(&WebApiConfigClass::onConfigGet, this, _1));
+    server.on("/api/config/delete", HTTP_POST, std::bind(&WebApiConfigClass::onConfigDelete, this, _1));
+    server.on("/api/config/list", HTTP_GET, std::bind(&WebApiConfigClass::onConfigListGet, this, _1));
+    server.on("/api/config/upload", HTTP_POST,
         std::bind(&WebApiConfigClass::onConfigUploadFinish, this, _1),
         std::bind(&WebApiConfigClass::onConfigUpload, this, _1, _2, _3, _4, _5, _6));
-}
-
-void WebApiConfigClass::loop()
-{
 }
 
 void WebApiConfigClass::onConfigGet(AsyncWebServerRequest* request)
@@ -46,6 +40,7 @@ void WebApiConfigClass::onConfigGet(AsyncWebServerRequest* request)
             requestFile = name;
         } else {
             request->send(404);
+            return;
         }
     }
 
@@ -59,51 +54,24 @@ void WebApiConfigClass::onConfigDelete(AsyncWebServerRequest* request)
     }
 
     AsyncJsonResponse* response = new AsyncJsonResponse();
-    JsonObject retMsg = response->getRoot();
-    retMsg["type"] = "warning";
-
-    if (!request->hasParam("data", true)) {
-        retMsg["message"] = "No values found!";
-        retMsg["code"] = WebApiError::GenericNoValueFound;
-        response->setLength();
-        request->send(response);
+    JsonDocument root;
+    if (!WebApi.parseRequestData(request, response, root)) {
         return;
     }
 
-    String json = request->getParam("data", true)->value();
-
-    if (json.length() > 1024) {
-        retMsg["message"] = "Data too large!";
-        retMsg["code"] = WebApiError::GenericDataTooLarge;
-        response->setLength();
-        request->send(response);
-        return;
-    }
-
-    DynamicJsonDocument root(1024);
-    DeserializationError error = deserializeJson(root, json);
-
-    if (error) {
-        retMsg["message"] = "Failed to parse data!";
-        retMsg["code"] = WebApiError::GenericDataTooLarge;
-        response->setLength();
-        request->send(response);
-        return;
-    }
+    auto& retMsg = response->getRoot();
 
     if (!(root.containsKey("delete"))) {
         retMsg["message"] = "Values are missing!";
         retMsg["code"] = WebApiError::GenericValueMissing;
-        response->setLength();
-        request->send(response);
+        WebApi.sendJsonResponse(request, response, __FUNCTION__, __LINE__);
         return;
     }
 
     if (root["delete"].as<bool>() == false) {
         retMsg["message"] = "Not deleted anything!";
         retMsg["code"] = WebApiError::ConfigNotDeleted;
-        response->setLength();
-        request->send(response);
+        WebApi.sendJsonResponse(request, response, __FUNCTION__, __LINE__);
         return;
     }
 
@@ -111,10 +79,9 @@ void WebApiConfigClass::onConfigDelete(AsyncWebServerRequest* request)
     retMsg["message"] = "Configuration resettet. Rebooting now...";
     retMsg["code"] = WebApiError::ConfigSuccess;
 
-    response->setLength();
-    request->send(response);
+    WebApi.sendJsonResponse(request, response, __FUNCTION__, __LINE__);
 
-    LittleFS.remove(CONFIG_FILENAME);
+    Utils::removeAllFiles();
     Utils::restartDtu();
 }
 
@@ -125,8 +92,8 @@ void WebApiConfigClass::onConfigListGet(AsyncWebServerRequest* request)
     }
 
     AsyncJsonResponse* response = new AsyncJsonResponse();
-    JsonObject root = response->getRoot();
-    JsonArray data = root.createNestedArray("configs");
+    auto& root = response->getRoot();
+    auto data = root["configs"].to<JsonArray>();
 
     File rootfs = LittleFS.open("/");
     File file = rootfs.openNextFile();
@@ -134,15 +101,14 @@ void WebApiConfigClass::onConfigListGet(AsyncWebServerRequest* request)
         if (file.isDirectory()) {
             continue;
         }
-        JsonObject obj = data.createNestedObject();
+        JsonObject obj = data.add<JsonObject>();
         obj["name"] = String(file.name());
 
         file = rootfs.openNextFile();
     }
     file.close();
 
-    response->setLength();
-    request->send(response);
+    WebApi.sendJsonResponse(request, response, __FUNCTION__, __LINE__);
 }
 
 void WebApiConfigClass::onConfigUploadFinish(AsyncWebServerRequest* request)
@@ -173,7 +139,7 @@ void WebApiConfigClass::onConfigUpload(AsyncWebServerRequest* request, String fi
             request->send(500);
             return;
         }
-        String name = "/" + request->getParam("file")->value();
+        const String name = "/" + request->getParam("file")->value();
         request->_tempFile = LittleFS.open(name, "w");
     }
 

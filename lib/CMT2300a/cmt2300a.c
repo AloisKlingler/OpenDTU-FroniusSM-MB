@@ -628,7 +628,11 @@ int CMT2300A_GetRssiDBm(void)
  *          for fast frequency hopping operation.
  * @param   nChann: the frequency channel
  * *********************************************************/
+<<<<<<< HEAD
 void CMT2300A_SetFrequencyChannel(uint8_t nChann)
+=======
+void CMT2300A_SetFrequencyChannel(const uint8_t nChann)
+>>>>>>> e541a885f51dcd3b88195ff4fa01a0f413889807
 {
     CMT2300A_WriteReg(CMT2300A_CUS_FREQ_CHNL, nChann);
 }

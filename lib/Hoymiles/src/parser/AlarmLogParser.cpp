@@ -1,7 +1,27 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (C) 2022-2023 Thomas Basler and others
+ * Copyright (C) 2022-2024 Thomas Basler and others
  */
+
+/*
+This parser is used to parse the response of 'AlarmDataCommand'.
+
+Data structure:
+* wcode:
+  * right 8 bit: Event ID
+  * bit 13: Start time = PM (12h has to be added to start time)
+  * bit 12: End time = PM (12h has to be added to start time)
+* Start: 12h based start time of the event (PM indicator in wcode)
+* End: 12h based start time of the event (PM indicator in wcode)
+
+00   01 02 03 04   05 06 07 08   09   10 11   12 13   14 15   16 17   18 19   20   21   22   23   24 25   26   27 28 29 30 31
+                                              00 01   02 03   04 05   06 07   08   09   10   11
+                                              |<-------------- First log entry -------------->|   |<->|
+-----------------------------------------------------------------------------------------------------------------------------
+95   80 14 82 66   80 14 33 28   01   00 01   80 01   00 01   91 EA   91 EA   00   00   00   00   00 8F   65   -- -- -- -- --
+^^   ^^^^^^^^^^^   ^^^^^^^^^^^   ^^   ^^^^^   ^^^^^           ^^^^^   ^^^^^   ^^   ^^   ^^   ^^   ^^^^^   ^^
+ID   Source Addr   Target Addr   Idx  ?       wcode   ?       Start   End     ?    ?    ?    ?    wcode   CRC8
+*/
 #include "AlarmLogParser.h"
 #include "../Hoymiles.h"
 #include <cstring>
@@ -55,11 +75,12 @@ const std::array<const AlarmMessage_t, ALARM_MSG_COUNT> AlarmLogParser::_alarmMe
     { AlarmMessageType_t::ALL, 144, "Grid: Grid overfrequency", "Netz: Netzüberfrequenz", "Réseau: Surfréquence du réseau" },
     { AlarmMessageType_t::ALL, 145, "Grid: Grid underfrequency", "Netz: Netzunterfrequenz", "Réseau: Sous-fréquence du réseau" },
     { AlarmMessageType_t::ALL, 146, "Grid: Rapid grid frequency change rate", "Netz: Schnelle Wechselrate der Netzfrequenz", "Réseau: Taux de fluctuation rapide de la fréquence du réseau" },
-    { AlarmMessageType_t::ALL, 147, "Grid: Power grid outage", "Netz: Eletrizitätsnetzausfall", "Réseau: Panne du réseau électrique" },
+    { AlarmMessageType_t::ALL, 147, "Grid: Power grid outage", "Netz: Elektrizitätsnetzausfall", "Réseau: Panne du réseau électrique" },
     { AlarmMessageType_t::ALL, 148, "Grid: Grid disconnection", "Netz: Netztrennung", "Réseau: Déconnexion du réseau" },
     { AlarmMessageType_t::ALL, 149, "Grid: Island detected", "Netz: Inselbetrieb festgestellt", "Réseau: Détection d’îlots" },
 
     { AlarmMessageType_t::ALL, 150, "DCI exceeded", "", "" },
+    { AlarmMessageType_t::ALL, 152, "Grid: Phase angle difference between two phases exceeded 5° >10 times", "", "" },
     { AlarmMessageType_t::HMT, 171, "Grid: Abnormal phase difference between phase to phase", "", "" },
     { AlarmMessageType_t::ALL, 181, "Abnormal insulation impedance", "", "" },
     { AlarmMessageType_t::ALL, 182, "Abnormal grounding", "", "" },
@@ -181,7 +202,7 @@ void AlarmLogParser::clearBuffer()
     _alarmLogLength = 0;
 }
 
-void AlarmLogParser::appendFragment(uint8_t offset, uint8_t* payload, uint8_t len)
+void AlarmLogParser::appendFragment(const uint8_t offset, const uint8_t* payload, const uint8_t len)
 {
     if (offset + len > ALARM_LOG_PAYLOAD_SIZE) {
         Hoymiles.getMessageOutput()->printf("FATAL: (%s, %d) stats packet too large for buffer (%d > %d)\r\n", __FILE__, __LINE__, offset + len, ALARM_LOG_PAYLOAD_SIZE);
@@ -191,7 +212,7 @@ void AlarmLogParser::appendFragment(uint8_t offset, uint8_t* payload, uint8_t le
     _alarmLogLength += len;
 }
 
-uint8_t AlarmLogParser::getEntryCount()
+uint8_t AlarmLogParser::getEntryCount() const
 {
     if (_alarmLogLength < 2) {
         return 0;
@@ -199,30 +220,30 @@ uint8_t AlarmLogParser::getEntryCount()
     return (_alarmLogLength - 2) / ALARM_LOG_ENTRY_SIZE;
 }
 
-void AlarmLogParser::setLastAlarmRequestSuccess(LastCommandSuccess status)
+void AlarmLogParser::setLastAlarmRequestSuccess(const LastCommandSuccess status)
 {
     _lastAlarmRequestSuccess = status;
 }
 
-LastCommandSuccess AlarmLogParser::getLastAlarmRequestSuccess()
+LastCommandSuccess AlarmLogParser::getLastAlarmRequestSuccess() const
 {
     return _lastAlarmRequestSuccess;
 }
 
-void AlarmLogParser::setMessageType(AlarmMessageType_t type)
+void AlarmLogParser::setMessageType(const AlarmMessageType_t type)
 {
     _messageType = type;
 }
 
-void AlarmLogParser::getLogEntry(uint8_t entryId, AlarmLogEntry_t* entry, AlarmMessageLocale_t locale)
+void AlarmLogParser::getLogEntry(const uint8_t entryId, AlarmLogEntry_t& entry, const AlarmMessageLocale_t locale)
 {
-    uint8_t entryStartOffset = 2 + entryId * ALARM_LOG_ENTRY_SIZE;
+    const uint8_t entryStartOffset = 2 + entryId * ALARM_LOG_ENTRY_SIZE;
 
-    int timezoneOffset = getTimezoneOffset();
+    const int timezoneOffset = getTimezoneOffset();
 
     HOY_SEMAPHORE_TAKE();
 
-    uint32_t wcode = (uint16_t)_payloadAlarmLog[entryStartOffset] << 8 | _payloadAlarmLog[entryStartOffset + 1];
+    const uint32_t wcode = (uint16_t)_payloadAlarmLog[entryStartOffset] << 8 | _payloadAlarmLog[entryStartOffset + 1];
     uint32_t startTimeOffset = 0;
     if (((wcode >> 13) & 0x01) == 1) {
         startTimeOffset = 12 * 60 * 60;
@@ -233,40 +254,40 @@ void AlarmLogParser::getLogEntry(uint8_t entryId, AlarmLogEntry_t* entry, AlarmM
         endTimeOffset = 12 * 60 * 60;
     }
 
-    entry->MessageId = _payloadAlarmLog[entryStartOffset + 1];
-    entry->StartTime = (((uint16_t)_payloadAlarmLog[entryStartOffset + 4] << 8) | ((uint16_t)_payloadAlarmLog[entryStartOffset + 5])) + startTimeOffset + timezoneOffset;
-    entry->EndTime = ((uint16_t)_payloadAlarmLog[entryStartOffset + 6] << 8) | ((uint16_t)_payloadAlarmLog[entryStartOffset + 7]);
+    entry.MessageId = _payloadAlarmLog[entryStartOffset + 1];
+    entry.StartTime = (((uint16_t)_payloadAlarmLog[entryStartOffset + 4] << 8) | ((uint16_t)_payloadAlarmLog[entryStartOffset + 5])) + startTimeOffset + timezoneOffset;
+    entry.EndTime = ((uint16_t)_payloadAlarmLog[entryStartOffset + 6] << 8) | ((uint16_t)_payloadAlarmLog[entryStartOffset + 7]);
 
     HOY_SEMAPHORE_GIVE();
 
-    if (entry->EndTime > 0) {
-        entry->EndTime += (endTimeOffset + timezoneOffset);
+    if (entry.EndTime > 0) {
+        entry.EndTime += (endTimeOffset + timezoneOffset);
     }
 
     switch (locale) {
     case AlarmMessageLocale_t::DE:
-        entry->Message = "Unbekannt";
+        entry.Message = "Unbekannt";
         break;
     case AlarmMessageLocale_t::FR:
-        entry->Message = "Inconnu";
+        entry.Message = "Inconnu";
         break;
     default:
-        entry->Message = "Unknown";
+        entry.Message = "Unknown";
     }
 
     for (auto& msg : _alarmMessages) {
-        if (msg.MessageId == entry->MessageId) {
+        if (msg.MessageId == entry.MessageId) {
             if (msg.InverterType == _messageType) {
-                entry->Message = getLocaleMessage(&msg, locale);
+                entry.Message = getLocaleMessage(&msg, locale);
                 break;
             } else if (msg.InverterType == AlarmMessageType_t::ALL) {
-                entry->Message = getLocaleMessage(&msg, locale);
+                entry.Message = getLocaleMessage(&msg, locale);
             }
         }
     }
 }
 
-String AlarmLogParser::getLocaleMessage(const AlarmMessage_t* msg, AlarmMessageLocale_t locale)
+String AlarmLogParser::getLocaleMessage(const AlarmMessage_t* msg, const AlarmMessageLocale_t locale) const
 {
     if (locale == AlarmMessageLocale_t::DE) {
         return msg->Message_de[0] != '\0' ? msg->Message_de : msg->Message_en;
