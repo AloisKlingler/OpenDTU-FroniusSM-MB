@@ -8,7 +8,7 @@ ModbusDtuClass ModbusDtu;
 
 ModbusDtuClass::ModbusDtuClass()
     : _loopTask(Configuration.get().Dtu.PollInterval * TASK_SECOND, TASK_FOREVER, std::bind(&ModbusDtuClass::loop, this))
-    , _modbusTask(TASK_IMMEDIATE, TASK_FOREVER, std::bind(&ModbusDtuClass::_modbusTask, this))
+    , _modbusTask(TASK_IMMEDIATE, TASK_FOREVER, std::bind(&ModbusDtuClass::modbus, this))
 {
 }
 
