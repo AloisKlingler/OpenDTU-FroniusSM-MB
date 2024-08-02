@@ -16,14 +16,12 @@ void ModbusDtuClass::init(Scheduler& scheduler)
 {
     scheduler.addTask(_loopTask);
     _loopTask.enable();
-
     scheduler.addTask(_modbusTask);
-    _modbusTask.enable();
 }
 
 void ModbusDtuClass::modbus()
 {
-    if (_isstarted) mb.task();
+    mb.task();
 }
 
 void ModbusDtuClass::setup()
@@ -98,6 +96,7 @@ void ModbusDtuClass::loop()
     if (!_isstarted) {
         if (Datastore.getIsAllEnabledReachable() && Datastore.getTotalAcYieldTotalEnabled() != 0) {
             ModbusDtu.setup();
+            _modbusTask.enable();
         } else {
             MessageOutput.printf("Fronius SM Simulation: not initializing yet! (Total Yield = 0 or not all configured inverters reachable).\r\n");
             return;
@@ -111,24 +110,23 @@ void ModbusDtuClass::loop()
         float value;
         uint16_t *hexbytes = reinterpret_cast<uint16_t *>(&value);
         value = (Datastore.getTotalAcPowerEnabled()*-1);
-        //MessageOutput.printf("Fronius SM Simulation: modbus write %.2f to 40097 and 40098\r\n", value);
+        // MessageOutput.printf("Fronius SM Simulation: modbus write %.2f to 40097 and 40098\r\n", value);
         mb.Hreg(0x9ca1, hexbytes[1]);
         mb.Hreg(0x9ca2, hexbytes[0]);
         value = (Datastore.getTotalAcYieldTotalEnabled()*1000);
         if (value > _lasttotal) {
             _lasttotal = value;
-            //MessageOutput.printf("Fronius SM Simulation: modbus write %.2f to 40129 and 40130\r\n", value);
+            // MessageOutput.printf("Fronius SM Simulation: modbus write %.2f to 40129 and 40130\r\n", value);
             mb.Hreg(0x9cc1, hexbytes[1]);
             mb.Hreg(0x9cc2, hexbytes[0]);
         }
-        /*
+
         if (Hoymiles.getNumInverters() == 1) {
+            // MessageOutput.printf("Fronius SM Simulation: Start additional SM Information\r\n");
             auto inv = Hoymiles.getInverterByPos(0);
             if (inv != nullptr) {
                 for (auto& t : inv->Statistics()->getChannelTypes()) {
                     if (t == TYPE_DC) {
-                        float value;
-                        uint16_t *hexbytes = reinterpret_cast<uint16_t *>(&value);
                         value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC));
                         mb.Hreg(0x9c87, hexbytes[1]);
                         mb.Hreg(0x9c88, hexbytes[0]);
@@ -168,9 +166,9 @@ void ModbusDtuClass::loop()
                         value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_F));
                         mb.Hreg(0x9c9f, hexbytes[1]);
                         mb.Hreg(0x9ca0, hexbytes[0]);
-                        value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_PAC)*-1);
-                        mb.Hreg(0x9ca1, hexbytes[1]);
-                        mb.Hreg(0x9ca2, hexbytes[0]);
+                        // value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_PAC)*-1);
+                        // mb.Hreg(0x9ca1, hexbytes[1]);
+                        // mb.Hreg(0x9ca2, hexbytes[0]);
                         value = ((inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC_1) != 0) ? ((inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC_1)) * (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC_1N)) *-1) : ((inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC)) * (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC)) *-1));
                         mb.Hreg(0x9ca3, hexbytes[1]);
                         mb.Hreg(0x9ca4, hexbytes[0]);
@@ -188,9 +186,9 @@ void ModbusDtuClass::loop()
                         // mb.Hreg(0x9cae, 0);
                         // mb.Hreg(0x9caf, 0);
                         // mb.Hreg(0x9cb0, 0);
-                        // value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_Q)); // sometimes irrealistic values
-                        // mb.Hreg(0x9cb1, hexbytes[1]);
-                        // mb.Hreg(0x9cb1, hexbytes[0]);
+                        value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_Q)); // sometimes irrealistic values
+                        mb.Hreg(0x9cb1, hexbytes[1]);
+                        mb.Hreg(0x9cb1, hexbytes[0]);
                         // mb.Hreg(0x9cb2, 0);
                         // mb.Hreg(0x9cb3, 0);
                         // mb.Hreg(0x9cb4, 0);
@@ -207,26 +205,16 @@ void ModbusDtuClass::loop()
                         // mb.Hreg(0x9cbe, 0);
                         // mb.Hreg(0x9cbf, 0);
                         // mb.Hreg(0x9cc0, 0);
-                        value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_YT)*1000);
-                        if (value != 0){
-                            mb.Hreg(0x9cc1, hexbytes[1]);
-                            mb.Hreg(0x9cc2, hexbytes[0]);
-                        }
+                        // value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_YT)*1000); //done above already!
+                        // if (value > _lasttotal) {
+                            // _lasttotal = value;
+                            // mb.Hreg(0x9cc1, hexbytes[1]); //done above already!
+                            // mb.Hreg(0x9cc2, hexbytes[0]); //done above already!
+                        // }
                     }
                 }
             }
-        } else {
-            float value;
-            uint16_t *hexbytes = reinterpret_cast<uint16_t *>(&value);
-            value = (Datastore.getTotalAcPowerEnabled()*-1);
-            mb.Hreg(0x9ca1, hexbytes[1]);
-            mb.Hreg(0x9ca2, hexbytes[0]);
-            value = (Datastore.getTotalAcYieldTotalEnabled()*1000);
-            if (value > _lasttotal && Datastore.getIsAllEnabledReachable()) {
-                _lasttotal = value;
-                mb.Hreg(0x9cc1, hexbytes[1]);
-                mb.Hreg(0x9cc2, hexbytes[0]);
-            }
-        }*/
+            // MessageOutput.printf("Fronius SM Simulation: End additional SM Information\r\n");
+        }
     }
 }
