@@ -186,10 +186,9 @@ void ModbusDtuClass::loop()
                         // mb.Hreg(0x9cae, 0);
                         // mb.Hreg(0x9caf, 0);
                         // mb.Hreg(0x9cb0, 0);
-                        value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_Q)); // sometimes irrealistic values
+                        value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_Q));
                         mb.Hreg(0x9cb1, hexbytes[1]);
-                        mb.Hreg(0x9cb1, hexbytes[0]);
-                        // mb.Hreg(0x9cb2, 0);
+                        mb.Hreg(0x9cb2, hexbytes[0]);
                         // mb.Hreg(0x9cb3, 0);
                         // mb.Hreg(0x9cb4, 0);
                         // mb.Hreg(0x9cb5, 0);
