@@ -154,9 +154,9 @@ void setup()
 
     InverterSettings.init(scheduler);
 
-    Datastore.init(scheduler);
-
     ModbusDtu.init(scheduler);
+
+    Datastore.init(scheduler);
 }
 
 void loop()
