@@ -32,53 +32,49 @@ void ModbusDtuClass::setup()
         return;
     }
     mb.server();
-    mb.addHreg(0x9c40, 21365); //40000
-    mb.addHreg(0x9c41, 28243);
-    mb.addHreg(0x9c42, 1);
-    mb.addHreg(0x9c43, 65);
-    mb.addHreg(0x9c44, 18034); //40004 Manufacturer start 4672 == Fr
-    mb.addHreg(0x9c45, 28526); //                         6f6e == on
-    mb.addHreg(0x9c46, 26997); //                         6975 == iu
-    mb.addHreg(0x9c47, 29440); //                         7300 == s
-    mb.addHreg(0x9c48, 0, 12); //40019 Manufacturer end
-    mb.addHreg(0x9c54, 21357); //40020 Device Model start 536d == Sm
-    mb.addHreg(0x9c55, 24946); //                         6172 == ar
-    mb.addHreg(0x9c56, 29728); //                         7420 == t
-    mb.addHreg(0x9c57, 19813); //                         4d65 == Me
-    mb.addHreg(0x9c58, 29797); //                         7465 == te
-    mb.addHreg(0x9c59, 29216); //                         7220 == r
-    mb.addHreg(0x9c5a, 21587); //                         5453 == TS
-    mb.addHreg(0x9c5b, 8246);  //                         2036 ==  6
-    mb.addHreg(0x9c5c, 13633); //                         3541 == 5A
-    mb.addHreg(0x9c5d, 11571); //                         2d33 == -3
-    mb.addHreg(0x9c5e, 0, 6); //40035 Device Model end
-    mb.addHreg(0x9c64, 15472); //40036 Options start 3c70 == <p
-    mb.addHreg(0x9c65, 29289); //                    7269 == ri
-    mb.addHreg(0x9c66, 28001); //                    6d61 == ma
-    mb.addHreg(0x9c67, 29305); //                    7279 == ry
-    mb.addHreg(0x9c68, 15872); //                    3E00 == >
-    mb.addHreg(0x9c69, 0, 3); //40043 Options end
-    mb.addHreg(0x9c6c, 12590); //40044 Software Version start 312e == 1.
-    mb.addHreg(0x9c6d, 13056); //                             3300 == 3
-    mb.addHreg(0x9c6e, 0, 6); //40051 Software Version N/A end
-    char buff[24];
-    uint16_t *hexbytes = reinterpret_cast<uint16_t *>(buff);
-    snprintf(buff,sizeof(buff),"%llx",(Configuration.get().Dtu.Serial));
+    mb.addHreg(0x9c40, 21365); //40000 Sunspec Id start   5375 == Su
+    mb.addHreg(0x9c41, 28243); //40001 Sunspec Id end     6e53 == nS
+    mb.addHreg(0x9c42, 1);     //40002 SunSpec_DID
+    mb.addHreg(0x9c43, 65);    //40003 SunSpec_Length
+    const char *mfrname = "Fronius"; //Manufacturer Name max. 32 chars
+    for (uint8_t i = 0; i < 32; i += 2) {
+        uint16_t value = 0;
+        if (strlen(mfrname) > i) value = (mfrname[i] << 8) | (i + 1 < strlen(mfrname) ? mfrname[i + 1] : 0);
+        mb.addHreg(0x9c44 + (i / 2), value); //40004 - 40019 Manufacturer name
+    }
+    const char *modelname = "Smart Meter TS 65A-3"; //Device Model max. 32 chars
+    for (uint8_t i = 0; i < 32; i += 2) {
+        uint16_t value = 0;
+        if (strlen(modelname) > i) value = (modelname[i] << 8) | (i + 1 < strlen(modelname) ? modelname[i + 1] : 0);
+        mb.addHreg(0x9c54 + (i / 2), value); //40020 - 40035 Device Model Name
+    }
+    const char *options = ""; //Options max. 16 chars
+    for (uint8_t i = 0; i < 16; i += 2) {
+        uint16_t value = 0;
+        if (strlen(options) > i) value = (options[i] << 8) | (i + 1 < strlen(options) ? options[i + 1] : 0);
+        mb.addHreg(0x9c64 + (i / 2), value); //40036 - 40043 Options
+    }
+    const char *version = "1.3"; //Version max. 16 chars
+    for (uint8_t i = 0; i < 16; i += 2) {
+        uint16_t value = 0;
+        if (strlen(version) > i) value = (version[i] << 8) | (i + 1 < strlen(version) ? version[i + 1] : 0);
+        mb.addHreg(0x9c6c + (i / 2), value); //40044 - 40051 Version
+    }
+    char serial[24];
+    uint16_t *hexbytes = reinterpret_cast<uint16_t *>(serial);
+    snprintf(serial,sizeof(serial),"%llx",(Configuration.get().Dtu.Serial));
     MessageOutput.printf("Fronius SM Simulation: init uses DTU Serial: %llx\r\n", Configuration.get().Dtu.Serial);
     MessageOutput.printf("Fronius SM Simulation: writing to init modbus registers %d %d %d %d %d %d\r\n", ntohs(hexbytes[0]), ntohs(hexbytes[1]), ntohs(hexbytes[2]), ntohs(hexbytes[3]), ntohs(hexbytes[4]), ntohs(hexbytes[5]));
-    mb.addHreg(0x9c74, ntohs(hexbytes[0])); //40052 Serial Number start
-    mb.addHreg(0x9c75, ntohs(hexbytes[1]));
-    mb.addHreg(0x9c76, ntohs(hexbytes[2]));
-    mb.addHreg(0x9c77, ntohs(hexbytes[3]));
-    mb.addHreg(0x9c78, ntohs(hexbytes[4]));
-    mb.addHreg(0x9c79, ntohs(hexbytes[5]));
+    for (uint8_t i = 0; i < 6; i++) {
+        mb.addHreg(0x9c74 + i, ntohs(hexbytes[i])); //40052 Serial Number start
+    }
     mb.addHreg(0x9c7a, 0, 10); //40067 Serial Number end
-    mb.addHreg(0x9c84, 202); //40068 Modbus TCP Address: 202
-    mb.addHreg(0x9c85, 213); //40069
-    mb.addHreg(0x9c86, 124); //40070
+    mb.addHreg(0x9c84, 202);   //40068 DeviceAddress Modbus TCP Address: 202
+    mb.addHreg(0x9c85, 213);   //40069 SunSpec_DID
+    mb.addHreg(0x9c86, 124);   //40070 SunSpec_Length
     mb.addHreg(40071, 0, 123); //40071 - 40194 smartmeter data
     mb.addHreg(0x9d03, 65535); //40195 end block identifier
-    mb.addHreg(0x9d04, 0); //40196
+    mb.addHreg(0x9d04, 0);     //40196
     _isstarted = true;
 }
 
