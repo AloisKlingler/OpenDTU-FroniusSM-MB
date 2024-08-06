@@ -104,7 +104,8 @@ void ModbusDtuClass::loop()
     }
 
     if (!_isstarted) {
-        if (Configuration.get().modbus.modbus_delaystart || (Datastore.getIsAllEnabledReachable() && Datastore.getTotalAcYieldTotalEnabled() != 0)) {
+        if (!(Configuration.get().modbus.modbus_delaystart) || (Datastore.getIsAllEnabledReachable() && Datastore.getTotalAcYieldTotalEnabled() != 0)) {
+            MessageOutput.printf("Modbus: starting server ... \r\n");
             ModbusDtu.setup();
             _modbusTask.enable();
         } else {
