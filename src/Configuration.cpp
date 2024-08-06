@@ -48,7 +48,13 @@ bool ConfigurationClass::write()
     mdns["enabled"] = config.Mdns.Enabled;
 
     JsonObject modbus = doc["modbus"].to<JsonObject>();
-    modbus["enabled"] = config.modbus.Fronius_SM_Simulation_Enabled;
+    modbus["modbus_tcp_enabled"] = config.modbus.modbus_tcp_enabled;
+    modbus["modbus_delaystart"] = config.modbus.modbus_delaystart;
+    modbus["mfrname"] = config.modbus.mfrname;
+    modbus["modelname"] = config.modbus.modelname;
+    modbus["options"] = config.modbus.options;
+    modbus["version"] = config.modbus.version;
+    modbus["serial"] = config.modbus.serial;
 
     JsonObject ntp = doc["ntp"].to<JsonObject>();
     ntp["server"] = config.Ntp.Server;
@@ -226,7 +232,13 @@ bool ConfigurationClass::read()
     config.Mdns.Enabled = mdns["enabled"] | MDNS_ENABLED;
 
     JsonObject modbus = doc["modbus"];
-    config.modbus.Fronius_SM_Simulation_Enabled = modbus["enabled"] | FRONIUS_SM_SIMULATION_ENABLED;
+    config.modbus.modbus_tcp_enabled = modbus["modbus_tcp_enabled"] | MODBUS_ENABLED;
+    config.modbus.modbus_delaystart = modbus["modbus_delaystart"] | MODBUS_DELAY_START;
+    strlcpy(config.modbus.mfrname, modbus["mfrname"] | MODBUS_MFRNAME, sizeof(config.modbus.mfrname));
+    strlcpy(config.modbus.modelname, modbus["modelname"] | MODBUS_MODELNAME, sizeof(config.modbus.modelname));
+    strlcpy(config.modbus.options, modbus["options"] | MODBUS_OPTIONS, sizeof(config.modbus.options));
+    strlcpy(config.modbus.version, modbus["version"] | MODBUS_VERSION, sizeof(config.modbus.version));
+    strlcpy(config.modbus.serial, modbus["serial"] | "", sizeof(config.modbus.serial));
 
     JsonObject ntp = doc["ntp"];
     strlcpy(config.Ntp.Server, ntp["server"] | NTP_SERVER, sizeof(config.Ntp.Server));

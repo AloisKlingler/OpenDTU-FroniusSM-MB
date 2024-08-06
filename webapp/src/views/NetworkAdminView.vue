@@ -82,12 +82,6 @@
                 />
             </CardElement>
 
-            <CardElement :text="$t('networkadmin.ModbusSettings')" textVariant="text-bg-primary" add-space>
-                <InputElement :label="$t('networkadmin.EnableFroniusSM')"
-                              v-model="networkConfigList.froniussmmodbusenabled"
-                              type="checkbox"/>
-            </CardElement>
-
             <CardElement :text="$t('networkadmin.AdminAp')" textVariant="text-bg-primary" add-space>
                 <InputElement
                     :label="$t('networkadmin.ApTimeout')"
@@ -97,6 +91,62 @@
                     max="99999"
                     :postfix="$t('networkadmin.Minutes')"
                     :tooltip="$t('networkadmin.ApTimeoutHint')"
+                />
+            </CardElement>
+
+            <CardElement :text="$t('networkadmin.ModbusSettings')" textVariant="text-bg-primary" add-space>
+                <InputElement
+                    :label="$t('networkadmin.EnableModbusTCP')"
+                    :tooltip="$t('networkadmin.EnableModbusTCPHint')"
+                    v-model="networkConfigList.modbus_tcp_enabled"
+                    type="checkbox"
+                />
+
+                <InputElement
+                    :label="$t('networkadmin.DelayModbusStart')"
+                    :tooltip="$t('networkadmin.DelayModbusStartHint')"
+                    v-model="networkConfigList.modbus_delaystart"
+                    type="checkbox"
+                />
+
+                <InputElement
+                    :label="$t('networkadmin.ModbusMfrName')"
+                    :tooltip="$t('networkadmin.ModbusMfrNameHint')"
+                    v-model="networkConfigList.mfrname"
+                    type="text"
+                    maxlength="32"
+                />
+
+                <InputElement
+                    :label="$t('networkadmin.ModbusModelName')"
+                    :tooltip="$t('networkadmin.ModbusModelNameHint')"
+                    v-model="networkConfigList.modelname"
+                    type="text"
+                    maxlength="32"
+                />
+
+                <InputElement
+                    :label="$t('networkadmin.ModbusOptions')"
+                    :tooltip="$t('networkadmin.ModbusOptionsHint')"
+                    v-model="networkConfigList.options"
+                    type="text"
+                    maxlength="16"
+                />
+
+                <InputElement
+                    :label="$t('networkadmin.ModbusVersion')"
+                    :tooltip="$t('networkadmin.ModbusVersionHint')"
+                    v-model="networkConfigList.version"
+                    type="text"
+                    maxlength="16"
+                />
+
+                <InputElement
+                    :label="$t('networkadmin.Modbusserial')"
+                    :tooltip="$t('networkadmin.ModbusserialHint')"
+                    v-model="networkConfigList.serial"
+                    type="text"
+                    maxlength="16"
                 />
             </CardElement>
             <FormFooter @reload="getNetworkConfig" />

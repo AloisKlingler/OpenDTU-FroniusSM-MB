@@ -22,7 +22,12 @@
 
 #define MDNS_ENABLED false
 
-#define FRONIUS_SM_SIMULATION_ENABLED false
+#define MODBUS_ENABLED false
+#define MODBUS_DELAY_START false
+#define MODBUS_MFRNAME "OpenDTU"
+#define MODBUS_MODELNAME "OpenDTU-SunSpec"
+#define MODBUS_OPTIONS ""
+#define MODBUS_VERSION "1.0"
 
 #define NTP_SERVER_OLD "pool.ntp.org"
 #define NTP_SERVER "opendtu.pool.ntp.org"

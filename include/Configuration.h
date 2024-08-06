@@ -77,7 +77,13 @@ struct CONFIG_T {
     } Mdns;
 
     struct {
-	    bool Fronius_SM_Simulation_Enabled;
+        bool modbus_tcp_enabled;
+        bool modbus_delaystart;
+        char mfrname[32];
+        char modelname[32];
+        char options[16];
+        char version[16];
+        char serial[16];
     } modbus;
 
     struct {

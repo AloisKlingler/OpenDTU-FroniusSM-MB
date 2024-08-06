@@ -70,7 +70,13 @@ void WebApiNetworkClass::onNetworkAdminGet(AsyncWebServerRequest* request)
     root["password"] = config.WiFi.Password;
     root["aptimeout"] = config.WiFi.ApTimeout;
     root["mdnsenabled"] = config.Mdns.Enabled;
-	root["froniussmmodbusenabled"] = config.modbus.Fronius_SM_Simulation_Enabled;
+    root["modbus_tcp_enabled"] = config.modbus.modbus_tcp_enabled;
+    root["modbus_delaystart"] = config.modbus.modbus_delaystart;
+    root["mfrname"] = config.modbus.mfrname;
+    root["modelname"] = config.modbus.modelname;
+    root["options"] = config.modbus.options;
+    root["version"] = config.modbus.version;
+    root["serial"] = config.modbus.serial;
 
     WebApi.sendJsonResponse(request, response, __FUNCTION__, __LINE__);
 }
@@ -196,7 +202,13 @@ void WebApiNetworkClass::onNetworkAdminPost(AsyncWebServerRequest* request)
     }
     config.WiFi.ApTimeout = root["aptimeout"].as<uint>();
     config.Mdns.Enabled = root["mdnsenabled"].as<bool>();
-	config.modbus.Fronius_SM_Simulation_Enabled = root["froniussmmodbusenabled"].as<bool>();
+    config.modbus.modbus_tcp_enabled = root["modbus_tcp_enabled"].as<bool>();
+    config.modbus.modbus_delaystart = root["modbus_delaystart"].as<bool>();
+    strlcpy(config.modbus.mfrname, root["mfrname"].as<String>().c_str(), sizeof(config.modbus.mfrname));
+    strlcpy(config.modbus.modelname, root["modelname"].as<String>().c_str(), sizeof(config.modbus.modelname));
+    strlcpy(config.modbus.options, root["options"].as<String>().c_str(), sizeof(config.modbus.options));
+    strlcpy(config.modbus.version, root["version"].as<String>().c_str(), sizeof(config.modbus.version));
+    strlcpy(config.modbus.serial, root["serial"].as<String>().c_str(), sizeof(config.modbus.serial));
 
     WebApi.writeConfig(retMsg);
 

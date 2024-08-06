@@ -433,8 +433,21 @@
         "Minutes": "minutes",
         "EnableMdns": "Enable mDNS",
         "MdnsSettings": "mDNS Settings",
-        "ModbusSettings": "Modbus Settings",
-        "EnableFroniusSM": "Enable Fronius SmartMeter simulation"
+		"ModbusSettings": "Modbus Settings",
+        "EnableModbusTCP": "Enable Modbus TCP server",
+        "EnableModbusTCPHint": "Activate SunSpec-compatible Modbus TCP server on port 502",
+        "DelayModbusStart": "Delay Modbus TCP serverstart",
+        "DelayModbusStartHint": "Modbus server start is delayed until all inverters are reachable and YieldTotal != 0",
+        "ModbusMfrName": "SunSpec Modbus manufacturer name",
+        "ModbusMfrNameHint": "If empty, 'OpenDTU' is used",
+        "ModbusModelName": "SunSpec Modbus model name",
+        "ModbusModelNameHint": "If empty, 'OpenDTU-Sunspec' is used",
+        "ModbusOptions": "SunSpec Modbus options",
+        "ModbusOptionsHint": "Sunspec Modbus options string",
+        "ModbusVersion": "SunSpec Modbus version",
+        "ModbusVersionHint": "If empty, '1.0' is used",
+        "Modbusserial": "SunSpec Modbus serial number",
+        "ModbusserialHint": "If empty, OpenDTU serial is used"
     },
     "mqttadmin": {
         "MqttSettings": "MQTT Settings",

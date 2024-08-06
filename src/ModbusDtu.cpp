@@ -27,52 +27,66 @@ void ModbusDtuClass::modbus()
 void ModbusDtuClass::setup()
 {
     if ((Configuration.get().Dtu.Serial) < 0x100000000000 || (Configuration.get().Dtu.Serial) > 0x199999999999) {
-        MessageOutput.printf("Fronius SM Simulation: need a DTU Serial between 100000000000 and 199999999999 (currently configured: %llx)\r\n", Configuration.get().Dtu.Serial);
+        MessageOutput.printf("Modbus: need a DTU Serial between 100000000000 and 199999999999 (currently configured: %llx)\r\n", Configuration.get().Dtu.Serial);
         _isstarted = false;
         return;
     }
     mb.server();
-    mb.addHreg(0x9c40, 21365); //40000 Sunspec Id start   5375 == Su
-    mb.addHreg(0x9c41, 28243); //40001 Sunspec Id end     6e53 == nS
+    mb.addHreg(0x9c40, 21365); //40000 Sunspec Id start
+    mb.addHreg(0x9c41, 28243); //40001 Sunspec Id end
     mb.addHreg(0x9c42, 1);     //40002 SunSpec_DID
     mb.addHreg(0x9c43, 65);    //40003 SunSpec_Length
-    const char *mfrname = "Fronius"; //Manufacturer Name max. 32 chars
+    const char *mfrname = Configuration.get().modbus.mfrname; //Manufacturer Name max. 32 chars
     for (uint8_t i = 0; i < 32; i += 2) {
         uint16_t value = 0;
         if (strlen(mfrname) > i) value = (mfrname[i] << 8) | (i + 1 < strlen(mfrname) ? mfrname[i + 1] : 0);
         mb.addHreg(0x9c44 + (i / 2), value); //40004 - 40019 Manufacturer name
+        // MessageOutput.printf("Vendor: write %d to register %d\r\n", value, (0x9c44 + (i / 2)));
     }
-    const char *modelname = "Smart Meter TS 65A-3"; //Device Model max. 32 chars
+    const char *modelname = Configuration.get().modbus.modelname;
     for (uint8_t i = 0; i < 32; i += 2) {
         uint16_t value = 0;
         if (strlen(modelname) > i) value = (modelname[i] << 8) | (i + 1 < strlen(modelname) ? modelname[i + 1] : 0);
         mb.addHreg(0x9c54 + (i / 2), value); //40020 - 40035 Device Model Name
+        // MessageOutput.printf("Modelname: write %d to register %d\r\n", value, (0x9c54 + (i / 2)));
     }
-    const char *options = ""; //Options max. 16 chars
+    const char *options = Configuration.get().modbus.options;
     for (uint8_t i = 0; i < 16; i += 2) {
         uint16_t value = 0;
         if (strlen(options) > i) value = (options[i] << 8) | (i + 1 < strlen(options) ? options[i + 1] : 0);
         mb.addHreg(0x9c64 + (i / 2), value); //40036 - 40043 Options
+        // MessageOutput.printf("Options: write %d to register %d\r\n", value, (0x9c64 + (i / 2)));
     }
-    const char *version = "1.3"; //Version max. 16 chars
+    const char *version = Configuration.get().modbus.version;
     for (uint8_t i = 0; i < 16; i += 2) {
         uint16_t value = 0;
         if (strlen(version) > i) value = (version[i] << 8) | (i + 1 < strlen(version) ? version[i + 1] : 0);
         mb.addHreg(0x9c6c + (i / 2), value); //40044 - 40051 Version
+        // MessageOutput.printf("Version: write %d to register %d\r\n", value, (0x9c6c + (i / 2)));
     }
-    char serial[24];
-    uint16_t *hexbytes = reinterpret_cast<uint16_t *>(serial);
-    snprintf(serial,sizeof(serial),"%llx",(Configuration.get().Dtu.Serial));
-    MessageOutput.printf("Fronius SM Simulation: init uses DTU Serial: %llx\r\n", Configuration.get().Dtu.Serial);
-    MessageOutput.printf("Fronius SM Simulation: writing to init modbus registers %d %d %d %d %d %d\r\n", ntohs(hexbytes[0]), ntohs(hexbytes[1]), ntohs(hexbytes[2]), ntohs(hexbytes[3]), ntohs(hexbytes[4]), ntohs(hexbytes[5]));
-    for (uint8_t i = 0; i < 6; i++) {
-        mb.addHreg(0x9c74 + i, ntohs(hexbytes[i])); //40052 Serial Number start
+    const char *serialconfig = Configuration.get().modbus.serial;
+    if (!strlen(serialconfig)) {
+        char serial[24];
+        uint16_t *hexbytes = reinterpret_cast<uint16_t *>(serial);
+        snprintf(serial,sizeof(serial),"%llx",(Configuration.get().Dtu.Serial));
+        MessageOutput.printf("Modbus: init uses DTU Serial: %llx\r\n", Configuration.get().Dtu.Serial);
+        MessageOutput.printf("Modbus: writing to init modbus registers %d %d %d %d %d %d\r\n", ntohs(hexbytes[0]), ntohs(hexbytes[1]), ntohs(hexbytes[2]), ntohs(hexbytes[3]), ntohs(hexbytes[4]), ntohs(hexbytes[5]));
+        for (uint8_t i = 0; i < 6; i++) {
+            mb.addHreg(0x9c74 + i, ntohs(hexbytes[i])); //40052 Serial Number start
+        }
+        mb.addHreg(0x9c7a, 0, 10); //40067 Serial Number end
+    } else {
+        for (uint8_t i = 0; i < 32; i += 2) {
+            uint16_t value = 0;
+            if (strlen(serialconfig) > i) value = (serialconfig[i] << 8) | (i + 1 < strlen(serialconfig) ? serialconfig[i + 1] : 0);
+            mb.addHreg(0x9c74 + (i / 2), value); //40052 - 40067 Serial Number
+            // MessageOutput.printf("Modbus: write %d to register %d\r\n", value, (0x9c74 + (i / 2)));
+        }
     }
-    mb.addHreg(0x9c7a, 0, 10); //40067 Serial Number end
     mb.addHreg(0x9c84, 202);   //40068 DeviceAddress Modbus TCP Address: 202
     mb.addHreg(0x9c85, 213);   //40069 SunSpec_DID
     mb.addHreg(0x9c86, 124);   //40070 SunSpec_Length
-    mb.addHreg(40071, 0, 123); //40071 - 40194 smartmeter data
+    mb.addHreg(0x9c87, 0, 123);//40071 - 40194 smartmeter data
     mb.addHreg(0x9d03, 65535); //40195 end block identifier
     mb.addHreg(0x9d04, 0);     //40196
     _isstarted = true;
@@ -82,7 +96,7 @@ void ModbusDtuClass::loop()
 {
     _loopTask.setInterval(Configuration.get().Dtu.PollInterval * TASK_SECOND);
 
-    if (!(Configuration.get().modbus.Fronius_SM_Simulation_Enabled)) return;
+    if (!(Configuration.get().modbus.modbus_tcp_enabled)) return;
 
     if (!Hoymiles.isAllRadioIdle()) {
          _loopTask.forceNextIteration();
@@ -90,35 +104,35 @@ void ModbusDtuClass::loop()
     }
 
     if (!_isstarted) {
-        if (Datastore.getIsAllEnabledReachable() && Datastore.getTotalAcYieldTotalEnabled() != 0) {
+        if (Configuration.get().modbus.modbus_delaystart || (Datastore.getIsAllEnabledReachable() && Datastore.getTotalAcYieldTotalEnabled() != 0)) {
             ModbusDtu.setup();
             _modbusTask.enable();
         } else {
-            MessageOutput.printf("Fronius SM Simulation: not initializing yet! (Total Yield = 0 or not all configured inverters reachable).\r\n");
+            MessageOutput.printf("Modbus: not initializing yet! (Total Yield = 0 or not all configured inverters reachable)\r\n");
             return;
         }
     }
 
-    if (!(Datastore.getIsAllEnabledReachable()) || !(Datastore.getTotalAcYieldTotalEnabled() != 0) || (!_isstarted)) {
-        MessageOutput.printf("Fronius SM Simulation: not updating registers! (Total Yield = 0 or not all configured inverters reachable).\r\n");
+    if (!(Datastore.getIsAllEnabledReachable()) || !(Datastore.getTotalAcYieldTotalEnabled() != 0) || (!_isstarted) || !(Configuration.get().modbus.modbus_delaystart)) {
+        MessageOutput.printf("Modbus: not updating registers! (Total Yield = 0 or not all configured inverters reachable)\r\n");
         return;
     } else {
         float value;
         uint16_t *hexbytes = reinterpret_cast<uint16_t *>(&value);
         value = (Datastore.getTotalAcPowerEnabled()*-1);
-        // MessageOutput.printf("Fronius SM Simulation: modbus write %.2f to 40097 and 40098\r\n", value);
+        // MessageOutput.printf("Modbus: write %.2f to 40097 and 40098\r\n", value);
         mb.Hreg(0x9ca1, hexbytes[1]);
         mb.Hreg(0x9ca2, hexbytes[0]);
         value = (Datastore.getTotalAcYieldTotalEnabled()*1000);
         if (value > _lasttotal) {
             _lasttotal = value;
-            // MessageOutput.printf("Fronius SM Simulation: modbus write %.2f to 40129 and 40130\r\n", value);
+            // MessageOutput.printf("Modbus: write %.2f to 40129 and 40130\r\n", value);
             mb.Hreg(0x9cc1, hexbytes[1]);
             mb.Hreg(0x9cc2, hexbytes[0]);
         }
 
         if (Hoymiles.getNumInverters() == 1) {
-            // MessageOutput.printf("Fronius SM Simulation: Start additional SM Information\r\n");
+            // MessageOutput.printf("Modbus: Start additional SM Information\r\n");
             auto inv = Hoymiles.getInverterByPos(0);
             if (inv != nullptr) {
                 for (auto& t : inv->Statistics()->getChannelTypes()) {
@@ -162,9 +176,9 @@ void ModbusDtuClass::loop()
                         value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_F));
                         mb.Hreg(0x9c9f, hexbytes[1]);
                         mb.Hreg(0x9ca0, hexbytes[0]);
-                        // value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_PAC)*-1);
-                        // mb.Hreg(0x9ca1, hexbytes[1]);
-                        // mb.Hreg(0x9ca2, hexbytes[0]);
+                        // value = (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_PAC)*-1); //done above already!
+                        // mb.Hreg(0x9ca1, hexbytes[1]); //done above already!
+                        // mb.Hreg(0x9ca2, hexbytes[0]); //done above already!
                         value = ((inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC_1) != 0) ? ((inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC_1)) * (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC_1N)) *-1) : ((inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_IAC)) * (inv->Statistics()->getChannelFieldValue(TYPE_AC, CH0, FLD_UAC)) *-1));
                         mb.Hreg(0x9ca3, hexbytes[1]);
                         mb.Hreg(0x9ca4, hexbytes[0]);
@@ -209,7 +223,7 @@ void ModbusDtuClass::loop()
                     }
                 }
             }
-            // MessageOutput.printf("Fronius SM Simulation: End additional SM Information\r\n");
+            // MessageOutput.printf("Modbus: End additional SM Information\r\n");
         }
     }
 }

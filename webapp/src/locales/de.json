@@ -434,7 +434,20 @@
         "EnableMdns": "mDNS aktivieren",
         "MdnsSettings": "mDNS-Einstellungen",
 		"ModbusSettings": "Modbus-Einstellungen",
-        "EnableFroniusSM": "Fronius SmartMeter Simulation aktivieren"
+        "EnableModbusTCP": "Modbus TCP Server aktivieren",
+        "EnableModbusTCPHint": "SunSpec-kompatiblen Modbus TCP Server auf port 502 aktivieren",
+        "DelayModbusStart": "Modbus TCP Serverstart verzögern",
+        "DelayModbusStartHint": "Modbus Server startet erst, wenn alle Wechselrichter erreichbar sind und YieldTotal != 0 ist",
+        "ModbusMfrName": "SunSpec Modbus Manufacturer Name",
+        "ModbusMfrNameHint": "Wenn leer wird automatisch 'OpenDTU' verwendet",
+        "ModbusModelName": "SunSpec Modbus Model Name",
+        "ModbusModelNameHint": "Wenn leer wird automatisch 'OpenDTU-Sunspec' verwendet",
+        "ModbusOptions": "SunSpec Modbus Options",
+        "ModbusOptionsHint": "Sunspec Modbus Options String",
+        "ModbusVersion": "SunSpec Modbus Version",
+        "ModbusVersionHint": "Wenn leer wird '1.0' verwendet",
+        "Modbusserial": "SunSpec Modbus Serial Number",
+        "ModbusserialHint": "Wenn leer wird automatisch die OpenDTU Serial verwendet"
     },
     "mqttadmin": {
         "MqttSettings": "MQTT-Einstellungen",
