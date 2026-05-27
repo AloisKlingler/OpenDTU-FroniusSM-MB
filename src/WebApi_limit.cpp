@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (C) 2022-2024 Thomas Basler and others
+ * Copyright (C) 2022-2026 Thomas Basler and others
  */
 #include "WebApi_limit.h"
 #include "WebApi.h"
@@ -14,8 +14,8 @@ void WebApiLimitClass::init(AsyncWebServer& server, Scheduler& scheduler)
 {
     using std::placeholders::_1;
 
-    server.on("/api/limit/status", HTTP_GET, std::bind(&WebApiLimitClass::onLimitStatus, this, _1));
-    server.on("/api/limit/config", HTTP_POST, std::bind(&WebApiLimitClass::onLimitPost, this, _1));
+    server.on("/api/limit/status", HTTP_GET, static_cast<ArRequestHandlerFunction>(std::bind(&WebApiLimitClass::onLimitStatus, this, _1)));
+    server.on("/api/limit/config", HTTP_POST, static_cast<ArRequestHandlerFunction>(std::bind(&WebApiLimitClass::onLimitPost, this, _1)));
 }
 
 void WebApiLimitClass::onLimitStatus(AsyncWebServerRequest* request)
@@ -64,9 +64,9 @@ void WebApiLimitClass::onLimitPost(AsyncWebServerRequest* request)
 
     auto& retMsg = response->getRoot();
 
-    if (!(root.containsKey("serial")
-            && root.containsKey("limit_value")
-            && root.containsKey("limit_type"))) {
+    if (!(root["serial"].is<String>()
+            && root["limit_value"].is<float>()
+            && root["limit_type"].is<uint16_t>())) {
         retMsg["message"] = "Values are missing!";
         retMsg["code"] = WebApiError::GenericValueMissing;
         WebApi.sendJsonResponse(request, response, __FUNCTION__, __LINE__);
@@ -84,18 +84,14 @@ void WebApiLimitClass::onLimitPost(AsyncWebServerRequest* request)
     }
 
     if (root["limit_value"].as<float>() > MAX_INVERTER_LIMIT) {
-        retMsg["message"] = "Limit must between 0 and " STR(MAX_INVERTER_LIMIT) "!";
+        retMsg["message"] = "Limit must between 0 and " STR_EXTRACT(MAX_INVERTER_LIMIT) "!";
         retMsg["code"] = WebApiError::LimitInvalidLimit;
         retMsg["param"]["max"] = MAX_INVERTER_LIMIT;
         WebApi.sendJsonResponse(request, response, __FUNCTION__, __LINE__);
         return;
     }
 
-    if (!((root["limit_type"].as<uint16_t>() == PowerLimitControlType::AbsolutNonPersistent)
-            || (root["limit_type"].as<uint16_t>() == PowerLimitControlType::AbsolutPersistent)
-            || (root["limit_type"].as<uint16_t>() == PowerLimitControlType::RelativNonPersistent)
-            || (root["limit_type"].as<uint16_t>() == PowerLimitControlType::RelativPersistent))) {
-
+    if (!(root["limit_type"].as<uint16_t>() < PowerLimitControlType::PowerLimitControl_Max)) {
         retMsg["message"] = "Invalid type specified!";
         retMsg["code"] = WebApiError::LimitInvalidType;
         WebApi.sendJsonResponse(request, response, __FUNCTION__, __LINE__);

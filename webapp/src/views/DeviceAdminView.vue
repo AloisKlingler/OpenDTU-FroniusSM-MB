@@ -1,7 +1,12 @@
 <template>
-    <BasePage :title="$t('deviceadmin.DeviceManager')" :isLoading="dataLoading || pinMappingLoading">
-        <BootstrapAlert v-model="showAlert" dismissible :variant="alertType">
-            {{ alertMessage }}
+    <BasePage :title="$t('deviceadmin.DeviceManager')" :isLoading="dataLoading || pinMappingLoading || languageLoading">
+        <BootstrapAlert
+            v-model="alert.show"
+            dismissible
+            :variant="alert.type"
+            :auto-dismiss="alert.type != 'success' ? 0 : 5000"
+        >
+            {{ alert.message }}
         </BootstrapAlert>
 
         <form @submit="savePinConfig">
@@ -51,7 +56,7 @@
                     aria-labelledby="nav-pin-tab"
                     tabindex="0"
                 >
-                    <div class="card">
+                    <div class="card card-tabbed">
                         <div class="card-body">
                             <div class="row mb-3">
                                 <label for="inputPinProfile" class="col-sm-2 col-form-label">{{
@@ -78,18 +83,17 @@
                                 </div>
                             </div>
 
-                            <div class="row mb-3">
+                            <div class="row mb-3" v-if="docLinks.length">
                                 <div class="col-sm-2"></div>
-                                <div class="col-sm-10">
-                                    <div
-                                        class="btn-group mb-2 me-2"
-                                        v-for="(doc, index) in pinMappingList.find(
-                                            (i) => i.name === deviceConfigList.curPin.name
-                                        )?.links"
+                                <div class="col-sm-10 d-flex gap-3">
+                                    <a
+                                        v-for="(doc, index) in docLinks"
                                         :key="index"
+                                        :href="doc.url"
+                                        class="btn btn-primary"
+                                        target="_blank"
+                                        >{{ doc.name }}</a
                                     >
-                                        <a :href="doc.url" class="btn btn-primary" target="_blank">{{ doc.name }}</a>
-                                    </div>
                                 </div>
                             </div>
 
@@ -116,7 +120,7 @@
                     aria-labelledby="nav-display-tab"
                     tabindex="0"
                 >
-                    <div class="card">
+                    <div class="card card-tabbed">
                         <div class="card-body">
                             <InputElement
                                 :label="$t('deviceadmin.PowerSafe')"
@@ -160,13 +164,13 @@
                                     {{ $t('deviceadmin.DisplayLanguage') }}
                                 </label>
                                 <div class="col-sm-10">
-                                    <select class="form-select" v-model="deviceConfigList.display.language">
+                                    <select class="form-select" v-model="deviceConfigList.display.locale">
                                         <option
-                                            v-for="language in displayLanguageList"
-                                            :key="language.key"
-                                            :value="language.key"
+                                            v-for="(locale, index) in displayLocaleList"
+                                            :key="locale.code"
+                                            :value="locale.code"
                                         >
-                                            {{ $t(`deviceadmin.` + language.value) }}
+                                            {{ $t((index < 3 ? `deviceadmin.` : ``) + locale.name) }}
                                         </option>
                                     </select>
                                 </div>
@@ -202,7 +206,7 @@
                                         min="0"
                                         max="100"
                                         id="inputDisplayContrast"
-                                        v-model="deviceConfigList.display.contrast"
+                                        v-model.number="deviceConfigList.display.contrast"
                                     />
                                 </div>
                             </div>
@@ -217,7 +221,7 @@
                     aria-labelledby="nav-leds-tab"
                     tabindex="0"
                 >
-                    <div class="card">
+                    <div class="card card-tabbed">
                         <div class="card-body">
                             <InputElement
                                 :label="$t('deviceadmin.EqualBrightness')"
@@ -239,7 +243,7 @@
                                         min="0"
                                         max="100"
                                         :id="getLedIdFromNumber(index)"
-                                        v-model="ledSetting.brightness"
+                                        v-model.number="ledSetting.brightness"
                                         @change="syncSliders"
                                     />
                                 </div>
@@ -260,6 +264,7 @@ import BootstrapAlert from '@/components/BootstrapAlert.vue';
 import FormFooter from '@/components/FormFooter.vue';
 import InputElement from '@/components/InputElement.vue';
 import PinInfo from '@/components/PinInfo.vue';
+import type { AlertResponse } from '@/types/AlertResponse';
 import type { DeviceConfig, Led } from '@/types/DeviceConfig';
 import type { PinMapping, Device } from '@/types/PinMapping';
 import { authHeader, handleResponse } from '@/utils/authentication';
@@ -277,11 +282,10 @@ export default defineComponent({
         return {
             dataLoading: true,
             pinMappingLoading: true,
+            languageLoading: true,
             deviceConfigList: {} as DeviceConfig,
             pinMappingList: {} as PinMapping,
-            alertMessage: '',
-            alertType: 'info',
-            showAlert: false,
+            alert: {} as AlertResponse,
             equalBrightnessCheckVal: false,
             displayRotationList: [
                 { key: 0, value: 'rot0' },
@@ -289,10 +293,10 @@ export default defineComponent({
                 { key: 2, value: 'rot180' },
                 { key: 3, value: 'rot270' },
             ],
-            displayLanguageList: [
-                { key: 0, value: 'en' },
-                { key: 1, value: 'de' },
-                { key: 2, value: 'fr' },
+            displayLocaleList: [
+                { code: 'en', name: 'en' },
+                { code: 'de', name: 'de' },
+                { code: 'fr', name: 'fr' },
             ],
             diagramModeList: [
                 { key: 0, value: 'off' },
@@ -304,30 +308,46 @@ export default defineComponent({
     created() {
         this.getDeviceConfig();
         this.getPinMappingList();
+        this.getLanguageList();
     },
     watch: {
         equalBrightnessCheckVal: function (val) {
             if (!val) {
                 return;
             }
-            this.deviceConfigList.led.every((v) => (v.brightness = this.deviceConfigList.led[0].brightness));
+            this.deviceConfigList.led.every((v) => (v.brightness = this.deviceConfigList.led[0]?.brightness ?? 0));
+        },
+    },
+    computed: {
+        docLinks() {
+            const mapping = this.pinMappingList.find((i) => i.name === this.deviceConfigList.curPin.name);
+            return mapping?.links || [];
         },
     },
     methods: {
+        getLanguageList() {
+            this.languageLoading = true;
+            fetch('/api/i18n/languages')
+                .then((response) => handleResponse(response, this.$emitter, this.$router))
+                .then((data) => {
+                    this.displayLocaleList.push(...data);
+                    this.languageLoading = false;
+                });
+        },
         getPinMappingList() {
             this.pinMappingLoading = true;
-            fetch('/api/config/get?file=pin_mapping.json', { headers: authHeader() })
+            fetch('/api/file/get?file=pin_mapping.json', { headers: authHeader() })
                 .then((response) => handleResponse(response, this.$emitter, this.$router, true))
                 .then((data) => {
                     this.pinMappingList = data;
                 })
                 .catch((error) => {
                     if (error.status != 404) {
-                        this.alertMessage = this.$t('deviceadmin.ParseError', {
+                        this.alert.message = this.$t('deviceadmin.ParseError', {
                             error: error.message,
                         });
-                        this.alertType = 'danger';
-                        this.showAlert = true;
+                        this.alert.type = 'danger';
+                        this.alert.show = true;
                     }
                     this.pinMappingList = Array<Device>();
                 })
@@ -365,9 +385,9 @@ export default defineComponent({
             })
                 .then((response) => handleResponse(response, this.$emitter, this.$router))
                 .then((response) => {
-                    this.alertMessage = this.$t('apiresponse.' + response.code, response.param);
-                    this.alertType = response.type;
-                    this.showAlert = true;
+                    this.alert.message = this.$t('apiresponse.' + response.code, response.param);
+                    this.alert.type = response.type;
+                    this.alert.show = true;
                 });
         },
         getLedIdFromNumber(ledNo: number): string {
@@ -377,7 +397,7 @@ export default defineComponent({
             return parseInt(id.replace('inputLED', '').replace('Brightness', ''));
         },
         isEqualBrightness(): boolean {
-            const allEqual = (arr: Led[]) => arr.every((v) => v.brightness === arr[0].brightness);
+            const allEqual = (arr: Led[]) => arr.every((v) => v.brightness === arr[0]?.brightness);
             return allEqual(this.deviceConfigList.led);
         },
         syncSliders(event: Event) {
@@ -385,7 +405,7 @@ export default defineComponent({
                 return;
             }
             const srcId = this.getNumberFromLedId((event.target as Element).id);
-            this.deviceConfigList.led.every((v) => (v.brightness = this.deviceConfigList.led[srcId].brightness));
+            this.deviceConfigList.led.map((v) => (v.brightness = this.deviceConfigList.led[srcId]?.brightness ?? 0));
         },
     },
 });

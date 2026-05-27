@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (C) 2023-2024 Thomas Basler and others
+ * Copyright (C) 2023-2026 Thomas Basler and others
  */
 #include "Display_Graphic_Diagram.h"
 #include "Configuration.h"
@@ -87,7 +87,7 @@ void DisplayGraphicDiagramClass::redraw(uint8_t screenSaverOffsetX, uint8_t xPos
     if (maxWatts > 999) {
         snprintf(fmtText, sizeof(fmtText), "%2.1fkW", maxWatts / 1000);
     } else {
-        snprintf(fmtText, sizeof(fmtText), "%dW", static_cast<uint16_t>(maxWatts));
+        snprintf(fmtText, sizeof(fmtText), "%" PRIu16 "W", static_cast<uint16_t>(maxWatts));
     }
 
     if (isFullscreen) {

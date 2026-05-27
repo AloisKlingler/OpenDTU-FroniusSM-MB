@@ -1,31 +1,35 @@
 
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (C) 2022-2024 Thomas Basler and others
+ * Copyright (C) 2022-2026 Thomas Basler and others
  */
 #include "WebApi_prometheus.h"
 #include "Configuration.h"
-#include "MessageOutput.h"
 #include "NetworkSettings.h"
 #include "WebApi.h"
-#include <Hoymiles.h>
 #include "__compiled_constants.h"
+#include <Hoymiles.h>
+
+#undef TAG
+static const char* TAG = "webapi";
 
 void WebApiPrometheusClass::init(AsyncWebServer& server, Scheduler& scheduler)
 {
     using std::placeholders::_1;
 
-    server.on("/api/prometheus/metrics", HTTP_GET, std::bind(&WebApiPrometheusClass::onPrometheusMetricsGet, this, _1));
+    server.on("/api/prometheus/metrics", HTTP_GET, static_cast<ArRequestHandlerFunction>(std::bind(&WebApiPrometheusClass::onPrometheusMetricsGet, this, _1)));
 }
 
 void WebApiPrometheusClass::onPrometheusMetricsGet(AsyncWebServerRequest* request)
 {
+    static size_t initialResponseBufferSize = 1024;
+
     if (!WebApi.checkCredentialsReadonly(request)) {
         return;
     }
 
     try {
-        auto stream = request->beginResponseStream("text/plain; charset=utf-8", 40960);
+        auto stream = request->beginResponseStream("text/plain; charset=utf-8", initialResponseBufferSize);
 
         stream->print("# HELP opendtu_build Build info\n");
         stream->print("# TYPE opendtu_build gauge\n");
@@ -42,23 +46,23 @@ void WebApiPrometheusClass::onPrometheusMetricsGet(AsyncWebServerRequest* reques
 
         stream->print("# HELP opendtu_heap_size System memory size\n");
         stream->print("# TYPE opendtu_heap_size gauge\n");
-        stream->printf("opendtu_heap_size %zu\n", ESP.getHeapSize());
+        stream->printf("opendtu_heap_size %" PRIu32 "\n", ESP.getHeapSize());
 
         stream->print("# HELP opendtu_free_heap_size System free memory\n");
         stream->print("# TYPE opendtu_free_heap_size gauge\n");
-        stream->printf("opendtu_free_heap_size %zu\n", ESP.getFreeHeap());
+        stream->printf("opendtu_free_heap_size %" PRIu32 "\n", ESP.getFreeHeap());
 
         stream->print("# HELP opendtu_biggest_heap_block Biggest free heap block\n");
         stream->print("# TYPE opendtu_biggest_heap_block gauge\n");
-        stream->printf("opendtu_biggest_heap_block %zu\n", ESP.getMaxAllocHeap());
+        stream->printf("opendtu_biggest_heap_block %" PRIu32 "\n", ESP.getMaxAllocHeap());
 
         stream->print("# HELP opendtu_heap_min_free Minimum free memory since boot\n");
         stream->print("# TYPE opendtu_heap_min_free gauge\n");
-        stream->printf("opendtu_heap_min_free %zu\n", ESP.getMinFreeHeap());
+        stream->printf("opendtu_heap_min_free %" PRIu32 "\n", ESP.getMinFreeHeap());
 
         stream->print("# HELP wifi_rssi WiFi RSSI\n");
         stream->print("# TYPE wifi_rssi gauge\n");
-        stream->printf("wifi_rssi %d\n", WiFi.RSSI());
+        stream->printf("wifi_rssi %" PRId8 "\n", WiFi.RSSI());
 
         stream->print("# HELP wifi_station WiFi Station info\n");
         stream->print("# TYPE wifi_station gauge\n");
@@ -73,14 +77,14 @@ void WebApiPrometheusClass::onPrometheusMetricsGet(AsyncWebServerRequest* reques
                 stream->print("# HELP opendtu_last_update last update from inverter in s\n");
                 stream->print("# TYPE opendtu_last_update gauge\n");
             }
-            stream->printf("opendtu_last_update{serial=\"%s\",unit=\"%d\",name=\"%s\"} %d\n",
+            stream->printf("opendtu_last_update{serial=\"%s\",unit=\"%" PRIu8 "\",name=\"%s\"} %" PRIu32 "\n",
                 serial.c_str(), i, name, inv->Statistics()->getLastUpdate() / 1000);
 
             if (i == 0) {
                 stream->print("# HELP opendtu_inverter_limit_relative current relative limit of the inverter\n");
                 stream->print("# TYPE opendtu_inverter_limit_relative gauge\n");
             }
-            stream->printf("opendtu_inverter_limit_relative{serial=\"%s\",unit=\"%d\",name=\"%s\"} %f\n",
+            stream->printf("opendtu_inverter_limit_relative{serial=\"%s\",unit=\"%" PRIu8 "\",name=\"%s\"} %f\n",
                 serial.c_str(), i, name, inv->SystemConfigPara()->getLimitPercent() / 100.0);
 
             if (inv->DevInfo()->getMaxPower() > 0) {
@@ -88,7 +92,7 @@ void WebApiPrometheusClass::onPrometheusMetricsGet(AsyncWebServerRequest* reques
                     stream->print("# HELP opendtu_inverter_limit_absolute current relative limit of the inverter\n");
                     stream->print("# TYPE opendtu_inverter_limit_absolute gauge\n");
                 }
-                stream->printf("opendtu_inverter_limit_absolute{serial=\"%s\",unit=\"%d\",name=\"%s\"} %f\n",
+                stream->printf("opendtu_inverter_limit_absolute{serial=\"%s\",unit=\"%" PRIu8 "\",name=\"%s\"} %f\n",
                     serial.c_str(), i, name, inv->SystemConfigPara()->getLimitPercent() * inv->DevInfo()->getMaxPower() / 100.0);
             }
 
@@ -108,11 +112,15 @@ void WebApiPrometheusClass::onPrometheusMetricsGet(AsyncWebServerRequest* reques
                 }
             }
         }
-        stream->addHeader("Cache-Control", "no-cache");
+        stream->addHeader(asyncsrv::T_Cache_Control, asyncsrv::T_no_cache);
+        if (stream->available() > initialResponseBufferSize) {
+            initialResponseBufferSize = stream->available();
+            ESP_LOGI(TAG, "Increased /api/prometheus/metrics initialResponseBufferSize to %" PRIu32 " bytes", initialResponseBufferSize);
+        }
         request->send(stream);
 
     } catch (std::bad_alloc& bad_alloc) {
-        MessageOutput.printf("Call to /api/prometheus/metrics temporarely out of resources. Reason: \"%s\".\r\n", bad_alloc.what());
+        ESP_LOGE(TAG, "Call to /api/prometheus/metrics temporarely out of resources. Reason: \"%s\".", bad_alloc.what());
 
         WebApi.sendTooManyRequests(request);
     }
@@ -126,7 +134,7 @@ void WebApiPrometheusClass::addField(AsyncResponseStream* stream, const String& 
             stream->printf("# HELP opendtu_%s in %s\n", chanName, inv->Statistics()->getChannelFieldUnit(type, channel, fieldId));
             stream->printf("# TYPE opendtu_%s %s\n", chanName, metricName);
         }
-        stream->printf("opendtu_%s{serial=\"%s\",unit=\"%d\",name=\"%s\",type=\"%s\",channel=\"%d\"} %s\n",
+        stream->printf("opendtu_%s{serial=\"%s\",unit=\"%" PRIu8 "\",name=\"%s\",type=\"%s\",channel=\"%d\"} %s\n",
             chanName,
             serial.c_str(),
             idx,
@@ -150,7 +158,7 @@ void WebApiPrometheusClass::addPanelInfo(AsyncResponseStream* stream, const Stri
         stream->print("# HELP opendtu_PanelInfo panel information\n");
         stream->print("# TYPE opendtu_PanelInfo gauge\n");
     }
-    stream->printf("opendtu_PanelInfo{serial=\"%s\",unit=\"%d\",name=\"%s\",channel=\"%d\",panelname=\"%s\"} 1\n",
+    stream->printf("opendtu_PanelInfo{serial=\"%s\",unit=\"%" PRIu8 "\",name=\"%s\",channel=\"%" PRIu8 "\",panelname=\"%s\"} 1\n",
         serial.c_str(),
         idx,
         inv->name(),
@@ -161,7 +169,7 @@ void WebApiPrometheusClass::addPanelInfo(AsyncResponseStream* stream, const Stri
         stream->print("# HELP opendtu_MaxPower panel maximum output power\n");
         stream->print("# TYPE opendtu_MaxPower gauge\n");
     }
-    stream->printf("opendtu_MaxPower{serial=\"%s\",unit=\"%d\",name=\"%s\",channel=\"%d\"} %d\n",
+    stream->printf("opendtu_MaxPower{serial=\"%s\",unit=\"%" PRIu8 "\",name=\"%s\",channel=\"%" PRIu8 "\"} %" PRIu16 "\n",
         serial.c_str(),
         idx,
         inv->name(),
@@ -172,7 +180,7 @@ void WebApiPrometheusClass::addPanelInfo(AsyncResponseStream* stream, const Stri
         stream->print("# HELP opendtu_YieldTotalOffset panel yield offset (for used inverters)\n");
         stream->print("# TYPE opendtu_YieldTotalOffset gauge\n");
     }
-    stream->printf("opendtu_YieldTotalOffset{serial=\"%s\",unit=\"%d\",name=\"%s\",channel=\"%d\"} %f\n",
+    stream->printf("opendtu_YieldTotalOffset{serial=\"%s\",unit=\"%" PRIu8 "\",name=\"%s\",channel=\"%" PRIu16 "\"} %f\n",
         serial.c_str(),
         idx,
         inv->name(),

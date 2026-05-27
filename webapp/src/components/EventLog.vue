@@ -1,18 +1,20 @@
 <template>
     <table class="table table-hover">
         <thead>
-            <th scope="col">{{ $t('eventlog.Start') }}</th>
-            <th scope="col">{{ $t('eventlog.Stop') }}</th>
-            <th scope="col">{{ $t('eventlog.Id') }}</th>
-            <th scope="col">{{ $t('eventlog.Message') }}</th>
+            <tr>
+                <th scope="col">{{ $t('eventlog.Start') }}</th>
+                <th scope="col">{{ $t('eventlog.Stop') }}</th>
+                <th scope="col">{{ $t('eventlog.Id') }}</th>
+                <th scope="col">{{ $t('eventlog.Message') }}</th>
+            </tr>
         </thead>
         <tbody>
-            <template v-for="event in eventLogList.count" :key="event">
+            <template v-for="(event, index) in eventLogList.events" :key="index">
                 <tr>
-                    <td>{{ timeInHours(eventLogList.events[event - 1].start_time) }}</td>
-                    <td>{{ timeInHours(eventLogList.events[event - 1].end_time) }}</td>
-                    <td>{{ eventLogList.events[event - 1].message_id }}</td>
-                    <td>{{ eventLogList.events[event - 1].message }}</td>
+                    <td>{{ timeInHours(event.start_time) }}</td>
+                    <td>{{ timeInHours(event.end_time) }}</td>
+                    <td>{{ event.message_id }}</td>
+                    <td>{{ event.message }}</td>
                 </tr>
             </template>
         </tbody>

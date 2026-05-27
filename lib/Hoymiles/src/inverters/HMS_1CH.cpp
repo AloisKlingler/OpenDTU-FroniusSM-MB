@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (C) 2023-2024 Thomas Basler and others
+ * Copyright (C) 2023-2026 Thomas Basler and others
  */
 #include "HMS_1CH.h"
 
@@ -15,7 +15,7 @@ static const byteAssign_t byteAssignment[] = {
     { TYPE_AC, CH0, FLD_UAC, UNIT_V, 14, 2, 10, false, 1 },
     { TYPE_AC, CH0, FLD_IAC, UNIT_A, 22, 2, 100, false, 2 },
     { TYPE_AC, CH0, FLD_PAC, UNIT_W, 18, 2, 10, false, 1 },
-    { TYPE_AC, CH0, FLD_Q, UNIT_VAR, 20, 2, 10, false, 1 },
+    { TYPE_AC, CH0, FLD_Q, UNIT_VAR, 20, 2, 10, true, 1 },
     { TYPE_AC, CH0, FLD_F, UNIT_HZ, 16, 2, 100, false, 2 },
     { TYPE_AC, CH0, FLD_PF, UNIT_NONE, 24, 2, 1000, false, 3 },
 
@@ -29,7 +29,9 @@ static const byteAssign_t byteAssignment[] = {
 };
 
 HMS_1CH::HMS_1CH(HoymilesRadio* radio, const uint64_t serial)
-    : HMS_Abstract(radio, serial) {};
+    : HMS_Abstract(radio, serial)
+{
+}
 
 bool HMS_1CH::isValidSerial(const uint64_t serial)
 {

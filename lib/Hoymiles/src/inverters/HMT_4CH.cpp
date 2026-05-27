@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (C) 2023-2024 Thomas Basler and others
+ * Copyright (C) 2023-2026 Thomas Basler and others
  */
 #include "HMT_4CH.h"
 
@@ -59,7 +59,9 @@ static const byteAssign_t byteAssignment[] = {
 };
 
 HMT_4CH::HMT_4CH(HoymilesRadio* radio, const uint64_t serial)
-    : HMT_Abstract(radio, serial) {};
+    : HMT_Abstract(radio, serial)
+{
+}
 
 bool HMT_4CH::isValidSerial(const uint64_t serial)
 {

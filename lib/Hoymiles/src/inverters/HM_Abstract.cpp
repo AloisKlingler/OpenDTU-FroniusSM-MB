@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (C) 2022-2024 Thomas Basler and others
+ * Copyright (C) 2022-2026 Thomas Basler and others
  */
 #include "HM_Abstract.h"
 #include "HoymilesRadio.h"
@@ -14,16 +14,13 @@
 #include "commands/SystemConfigParaCommand.h"
 
 HM_Abstract::HM_Abstract(HoymilesRadio* radio, const uint64_t serial)
-    : InverterAbstract(radio, serial) {};
+    : InverterAbstract(radio, serial)
+{
+}
 
 bool HM_Abstract::sendStatsRequest()
 {
     if (!getEnablePolling()) {
-        return false;
-    }
-
-    struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 5)) {
         return false;
     }
 
@@ -43,20 +40,15 @@ bool HM_Abstract::sendAlarmLogRequest(const bool force)
         return false;
     }
 
-    struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 5)) {
-        return false;
-    }
-
     if (!force) {
         if (Statistics()->hasChannelFieldValue(TYPE_INV, CH0, FLD_EVT_LOG)) {
-            if ((uint8_t)Statistics()->getChannelFieldValue(TYPE_INV, CH0, FLD_EVT_LOG) == _lastAlarmLogCnt) {
+            if (static_cast<uint8_t>(Statistics()->getChannelFieldValue(TYPE_INV, CH0, FLD_EVT_LOG) == _lastAlarmLogCnt)) {
                 return false;
             }
         }
     }
 
-    _lastAlarmLogCnt = (uint8_t)Statistics()->getChannelFieldValue(TYPE_INV, CH0, FLD_EVT_LOG);
+    _lastAlarmLogCnt = static_cast<uint8_t>(Statistics()->getChannelFieldValue(TYPE_INV, CH0, FLD_EVT_LOG));
 
     time_t now;
     time(&now);
@@ -72,11 +64,6 @@ bool HM_Abstract::sendAlarmLogRequest(const bool force)
 bool HM_Abstract::sendDevInfoRequest()
 {
     if (!getEnablePolling()) {
-        return false;
-    }
-
-    struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 5)) {
         return false;
     }
 
@@ -97,11 +84,6 @@ bool HM_Abstract::sendDevInfoRequest()
 bool HM_Abstract::sendSystemConfigParaRequest()
 {
     if (!getEnablePolling()) {
-        return false;
-    }
-
-    struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 5)) {
         return false;
     }
 
@@ -203,11 +185,6 @@ bool HM_Abstract::sendGridOnProFileParaRequest()
         return false;
     }
 
-    struct tm timeinfo;
-    if (!getLocalTime(&timeinfo, 5)) {
-        return false;
-    }
-
     time_t now;
     time(&now);
 
@@ -216,4 +193,9 @@ bool HM_Abstract::sendGridOnProFileParaRequest()
     _radio->enqueCommand(cmd);
 
     return true;
+}
+
+bool HM_Abstract::supportsPowerDistributionLogic()
+{
+    return false;
 }
