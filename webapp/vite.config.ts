@@ -14,7 +14,7 @@ let proxy_target;
 try {
     // eslint-disable-next-line
     proxy_target = require('./vite.user.ts').proxy_target;
-} catch (error) {
+} catch {
     proxy_target = '192.168.20.110';
 }
 
@@ -27,10 +27,10 @@ export default defineConfig({
     VueI18nPlugin({
         /* options */
         include: path.resolve(path.dirname(fileURLToPath(import.meta.url)), './src/locales/**.json'),
+        runtimeOnly: false,
         fullInstall: false,
         forceStringify: true,
         strictMessage: false,
-        jitCompilation: false,
     }),
   ],
   resolve: {
@@ -45,19 +45,40 @@ export default defineConfig({
     outDir: '../webapp_dist',
     emptyOutDir: true,
     minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+      format: {
+        comments: false,
+      },
+    },
+    chunkSizeWarningLimit: 1024,
     rollupOptions: {
       output: {
         // Only create one js file
-        inlineDynamicImports: true,
+        codeSplitting: false,
         // Get rid of hash on js file
         entryFileNames: 'js/app.js',
         // Get rid of hash on css file
         assetFileNames: "assets/[name].[ext]",
       },
     },
+    target: 'es2022',
   },
-  esbuild: {
-    drop: ['console', 'debugger'],
+  css: {
+    preprocessorOptions: {
+      scss: {
+        // Required to make bootstrap compile without errors
+        silenceDeprecations: [
+          'import',
+          'if-function',
+          'color-functions',
+          'global-builtin',
+        ],
+      },
+    },
   },
   server: {
     proxy: {

@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (C) 2023 Thomas Basler and others
+ * Copyright (C) 2023-2026 Thomas Basler and others
  */
 #include "HoymilesRadio.h"
-#include "Hoymiles.h"
 #include "crc.h"
+#include "Hoymiles.h"
+#include <esp_log.h>
+
+#undef TAG
+static const char* TAG = "hoymiles";
 
 serial_u HoymilesRadio::DtuSerial() const
 {
@@ -54,46 +58,69 @@ void HoymilesRadio::sendLastPacketAgain()
 void HoymilesRadio::handleReceivedPackage()
 {
     if (_busyFlag && _rxTimeout.occured()) {
-        Hoymiles.getMessageOutput()->println("RX Period End");
+        ESP_LOGI(TAG, "RX Period End");
         std::shared_ptr<InverterAbstract> inv = Hoymiles.getInverterBySerial(_commandQueue.front().get()->getTargetAddress());
 
         if (nullptr != inv) {
             CommandAbstract* cmd = _commandQueue.front().get();
             uint8_t verifyResult = inv->verifyAllFragments(*cmd);
             if (verifyResult == FRAGMENT_ALL_MISSING_RESEND) {
-                Hoymiles.getMessageOutput()->println("Nothing received, resend whole request");
+                ESP_LOGW(TAG, "Nothing received, resend whole request");
                 sendLastPacketAgain();
 
             } else if (verifyResult == FRAGMENT_ALL_MISSING_TIMEOUT) {
-                Hoymiles.getMessageOutput()->println("Nothing received, resend count exeeded");
+                ESP_LOGW(TAG, "Nothing received, resend count exeeded");
+                // Statistics: Count RX Fail No Answer
+                if (inv->RadioStats.TxRequestData > 0) {
+                    inv->RadioStats.RxFailNoAnswer++;
+                }
+
                 _commandQueue.pop();
                 _busyFlag = false;
 
             } else if (verifyResult == FRAGMENT_RETRANSMIT_TIMEOUT) {
-                Hoymiles.getMessageOutput()->println("Retransmit timeout");
+                ESP_LOGW(TAG, "Retransmit timeout");
+                // Statistics: Count RX Fail Partial Answer
+                if (inv->RadioStats.TxRequestData > 0) {
+                    inv->RadioStats.RxFailPartialAnswer++;
+                }
+
                 _commandQueue.pop();
                 _busyFlag = false;
 
             } else if (verifyResult == FRAGMENT_HANDLE_ERROR) {
-                Hoymiles.getMessageOutput()->println("Packet handling error");
+                ESP_LOGW(TAG, "Packet handling error");
+                // Statistics: Count RX Fail Corrupt Data
+                if (inv->RadioStats.TxRequestData > 0) {
+                    inv->RadioStats.RxFailCorruptData++;
+                }
+
                 _commandQueue.pop();
                 _busyFlag = false;
 
             } else if (verifyResult > 0) {
                 // Perform Retransmit
-                Hoymiles.getMessageOutput()->print("Request retransmit: ");
-                Hoymiles.getMessageOutput()->println(verifyResult);
+                ESP_LOGI(TAG, "Request retransmit: %" PRIu8 "", verifyResult);
+                // Statistics: Count TX Re-Request Fragment
+                inv->RadioStats.TxReRequestFragment++;
+
                 sendRetransmitPacket(verifyResult);
 
             } else {
                 // Successful received all packages
-                Hoymiles.getMessageOutput()->println("Success");
+                ESP_LOGI(TAG, "Success");
+                // Statistics: Count RX Success
+                if (inv->RadioStats.TxRequestData > 0) {
+                    inv->RadioStats.RxSuccess++;
+                }
+
                 _commandQueue.pop();
                 _busyFlag = false;
             }
         } else {
             // If inverter was not found, assume the command is invalid
-            Hoymiles.getMessageOutput()->println("RX: Invalid inverter found");
+            ESP_LOGW(TAG, "RX: Invalid inverter found");
+            // Statistics: Count RX Fail Unknown Data
             _commandQueue.pop();
             _busyFlag = false;
         }
@@ -105,28 +132,31 @@ void HoymilesRadio::handleReceivedPackage()
             auto inv = Hoymiles.getInverterBySerial(cmd->getTargetAddress());
             if (nullptr != inv) {
                 inv->clearRxFragmentBuffer();
+                // Statistics: TX Requests
+                inv->RadioStats.TxRequestData++;
+
                 sendEsbPacket(*cmd);
             } else {
-                Hoymiles.getMessageOutput()->println("TX: Invalid inverter found");
+                ESP_LOGE(TAG, "TX: Invalid inverter found");
                 _commandQueue.pop();
             }
         }
     }
 }
 
-void HoymilesRadio::dumpBuf(const uint8_t buf[], const uint8_t len, const bool appendNewline)
-{
-    for (uint8_t i = 0; i < len; i++) {
-        Hoymiles.getMessageOutput()->printf("%02X ", buf[i]);
-    }
-    if (appendNewline) {
-        Hoymiles.getMessageOutput()->println("");
-    }
-}
-
 bool HoymilesRadio::isInitialized() const
 {
     return _isInitialized;
+}
+
+void HoymilesRadio::removeCommands(InverterAbstract* inv)
+{
+    _commandQueue.removeAllEntriesForInverter(inv);
+}
+
+uint8_t HoymilesRadio::countSimilarCommands(std::shared_ptr<CommandAbstract> cmd)
+{
+    return _commandQueue.countSimilarCommands(cmd);
 }
 
 bool HoymilesRadio::isIdle() const
@@ -137,4 +167,9 @@ bool HoymilesRadio::isIdle() const
 bool HoymilesRadio::isQueueEmpty() const
 {
     return _commandQueue.size() == 0;
+}
+
+uint32_t HoymilesRadio::getQueueSize() const
+{
+    return _commandQueue.size();
 }

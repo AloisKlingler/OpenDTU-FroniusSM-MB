@@ -1,7 +1,12 @@
 <template>
     <BasePage :title="$t('mqttadmin.MqttSettings')" :isLoading="dataLoading">
-        <BootstrapAlert v-model="showAlert" dismissible :variant="alertType">
-            {{ alertMessage }}
+        <BootstrapAlert
+            v-model="alert.show"
+            dismissible
+            :variant="alert.type"
+            :auto-dismiss="alert.type != 'success' ? 0 : 5000"
+        >
+            {{ alert.message }}
         </BootstrapAlert>
 
         <form @submit="saveMqttConfig">
@@ -14,7 +19,7 @@
                 />
 
                 <InputElement
-                    v-show="mqttConfigList.mqtt_enabled"
+                    v-if="mqttConfigList.mqtt_enabled"
                     :label="$t('mqttadmin.EnableHass')"
                     v-model="mqttConfigList.mqtt_hass_enabled"
                     type="checkbox"
@@ -26,7 +31,7 @@
                 :text="$t('mqttadmin.MqttBrokerParameter')"
                 textVariant="text-bg-primary"
                 add-space
-                v-show="mqttConfigList.mqtt_enabled"
+                v-if="mqttConfigList.mqtt_enabled"
             >
                 <InputElement
                     :label="$t('mqttadmin.Hostname')"
@@ -99,7 +104,7 @@
                 <InputElement :label="$t('mqttadmin.EnableTls')" v-model="mqttConfigList.mqtt_tls" type="checkbox" />
 
                 <InputElement
-                    v-show="mqttConfigList.mqtt_tls"
+                    v-if="mqttConfigList.mqtt_tls"
                     :label="$t('mqttadmin.RootCa')"
                     v-model="mqttConfigList.mqtt_root_ca_cert"
                     type="textarea"
@@ -108,14 +113,14 @@
                 />
 
                 <InputElement
-                    v-show="mqttConfigList.mqtt_tls"
+                    v-if="mqttConfigList.mqtt_tls"
                     :label="$t('mqttadmin.TlsCertLoginEnable')"
                     v-model="mqttConfigList.mqtt_tls_cert_login"
                     type="checkbox"
                 />
 
                 <InputElement
-                    v-show="mqttConfigList.mqtt_tls_cert_login"
+                    v-if="mqttConfigList.mqtt_tls_cert_login"
                     :label="$t('mqttadmin.ClientCert')"
                     v-model="mqttConfigList.mqtt_client_cert"
                     type="textarea"
@@ -124,7 +129,7 @@
                 />
 
                 <InputElement
-                    v-show="mqttConfigList.mqtt_tls_cert_login"
+                    v-if="mqttConfigList.mqtt_tls_cert_login"
                     :label="$t('mqttadmin.ClientKey')"
                     v-model="mqttConfigList.mqtt_client_key"
                     type="textarea"
@@ -137,7 +142,7 @@
                 :text="$t('mqttadmin.LwtParameters')"
                 textVariant="text-bg-primary"
                 add-space
-                v-show="mqttConfigList.mqtt_enabled"
+                v-if="mqttConfigList.mqtt_enabled"
             >
                 <InputElement
                     :label="$t('mqttadmin.LwtTopic')"
@@ -182,7 +187,7 @@
                 :text="$t('mqttadmin.HassParameters')"
                 textVariant="text-bg-primary"
                 add-space
-                v-show="mqttConfigList.mqtt_enabled && mqttConfigList.mqtt_hass_enabled"
+                v-if="mqttConfigList.mqtt_enabled && mqttConfigList.mqtt_hass_enabled"
             >
                 <InputElement
                     :label="$t('mqttadmin.HassPrefixTopic')"
@@ -222,6 +227,7 @@ import BootstrapAlert from '@/components/BootstrapAlert.vue';
 import CardElement from '@/components/CardElement.vue';
 import FormFooter from '@/components/FormFooter.vue';
 import InputElement from '@/components/InputElement.vue';
+import type { AlertResponse } from '@/types/AlertResponse';
 import type { MqttConfig } from '@/types/MqttConfig';
 import { authHeader, handleResponse } from '@/utils/authentication';
 import { defineComponent } from 'vue';
@@ -238,9 +244,7 @@ export default defineComponent({
         return {
             dataLoading: true,
             mqttConfigList: {} as MqttConfig,
-            alertMessage: '',
-            alertType: 'info',
-            showAlert: false,
+            alert: {} as AlertResponse,
             qosTypeList: [
                 { key: 0, value: 'QOS0' },
                 { key: 1, value: 'QOS1' },
@@ -274,9 +278,9 @@ export default defineComponent({
             })
                 .then((response) => handleResponse(response, this.$emitter, this.$router))
                 .then((response) => {
-                    this.alertMessage = this.$t('apiresponse.' + response.code, response.param);
-                    this.alertType = response.type;
-                    this.showAlert = true;
+                    this.alert.message = this.$t('apiresponse.' + response.code, response.param);
+                    this.alert.type = response.type;
+                    this.alert.show = true;
                 });
         },
     },

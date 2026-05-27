@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (C) 2022-2024 Thomas Basler and others
+ * Copyright (C) 2022-2026 Thomas Basler and others
  */
 #include "HERF_4CH.h"
 
 HERF_4CH::HERF_4CH(HoymilesRadio* radio, const uint64_t serial)
-    : HM_4CH(radio, serial) {};
+    : HM_4CH(radio, serial)
+{
+}
 
 bool HERF_4CH::isValidSerial(const uint64_t serial)
 {

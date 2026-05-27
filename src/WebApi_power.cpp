@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (C) 2022-2024 Thomas Basler and others
+ * Copyright (C) 2022-2026 Thomas Basler and others
  */
 #include "WebApi_power.h"
 #include "WebApi.h"
@@ -12,8 +12,8 @@ void WebApiPowerClass::init(AsyncWebServer& server, Scheduler& scheduler)
 {
     using std::placeholders::_1;
 
-    server.on("/api/power/status", HTTP_GET, std::bind(&WebApiPowerClass::onPowerStatus, this, _1));
-    server.on("/api/power/config", HTTP_POST, std::bind(&WebApiPowerClass::onPowerPost, this, _1));
+    server.on("/api/power/status", HTTP_GET, static_cast<ArRequestHandlerFunction>(std::bind(&WebApiPowerClass::onPowerStatus, this, _1)));
+    server.on("/api/power/config", HTTP_POST, static_cast<ArRequestHandlerFunction>(std::bind(&WebApiPowerClass::onPowerPost, this, _1)));
 }
 
 void WebApiPowerClass::onPowerStatus(AsyncWebServerRequest* request)
@@ -57,9 +57,9 @@ void WebApiPowerClass::onPowerPost(AsyncWebServerRequest* request)
 
     auto& retMsg = response->getRoot();
 
-    if (!(root.containsKey("serial")
-            && (root.containsKey("power")
-                || root.containsKey("restart")))) {
+    if (!(root["serial"].is<String>()
+            && (root["power"].is<bool>()
+                || root["restart"].is<bool>()))) {
         retMsg["message"] = "Values are missing!";
         retMsg["code"] = WebApiError::GenericValueMissing;
         WebApi.sendJsonResponse(request, response, __FUNCTION__, __LINE__);
@@ -84,8 +84,8 @@ void WebApiPowerClass::onPowerPost(AsyncWebServerRequest* request)
         return;
     }
 
-    if (root.containsKey("power")) {
-        uint16_t power = root["power"].as<bool>();
+    if (root["power"].is<bool>()) {
+        bool power = root["power"].as<bool>();
         inv->sendPowerControlRequest(power);
     } else {
         if (root["restart"].as<bool>()) {

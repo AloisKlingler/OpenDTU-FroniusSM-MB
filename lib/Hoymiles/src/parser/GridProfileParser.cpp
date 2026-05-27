@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (C) 2023 - 2024 Thomas Basler and others
+ * Copyright (C) 2023 - 2026 Thomas Basler and others
  */
 
 /*
@@ -20,10 +20,13 @@ ID   Source Addr   Target Addr   Idx  Profile ID   Profile Version   Section ID 
 The number of values depends on the respective section and its version. After the last value of a section follows the next section id.
 */
 #include "GridProfileParser.h"
-#include "../Hoymiles.h"
 #include <cstring>
+#include <esp_log.h>
 #include <frozen/map.h>
 #include <frozen/string.h>
+
+#undef TAG
+static const char* TAG = "hoymiles";
 
 const std::array<const ProfileType_t, PROFILE_TYPE_COUNT> GridProfileParser::_profileTypes = { {
     { 0x02, 0x00, "US - NA_IEEE1547_240V" },
@@ -131,7 +134,7 @@ constexpr frozen::map<uint8_t, GridProfileItemDefinition_t, 0x42> itemDefinition
     { 0x3f, make_value("HF2 Maximum Trip time (MTT)", "s", 100) },
     { 0x40, make_value("Short Interruption Reconnect Time (SRT)", "s", 10) },
     { 0x41, make_value("Short Interruption Time (SIT)", "s", 10) },
-    { 0xff, make_value("Unkown Value", "", 1) },
+    { 0xff, make_value("Unknown Value", "", 1) },
 };
 
 const std::array<const GridProfileValue_t, SECTION_VALUE_COUNT> GridProfileParser::_profileValues = { {
@@ -377,7 +380,7 @@ void GridProfileParser::clearBuffer()
 void GridProfileParser::appendFragment(const uint8_t offset, const uint8_t* payload, const uint8_t len)
 {
     if (offset + len > GRID_PROFILE_SIZE) {
-        Hoymiles.getMessageOutput()->printf("FATAL: (%s, %d) grid profile packet too large for buffer\r\n", __FILE__, __LINE__);
+        ESP_LOGE(TAG, "(%s, %d) grid profile packet too large for buffer", __FILE__, __LINE__);
         return;
     }
     memcpy(&_payloadGridProfile[offset], payload, len);
@@ -443,7 +446,7 @@ std::list<GridProfileSection_t> GridProfileParser::getProfile() const
             for (uint8_t val_id = 0; val_id < section_size; val_id++) {
                 auto itemDefinition = itemDefinitions.at(_profileValues[section_start + val_id].ItemDefinition);
 
-                float value = (int16_t)((_payloadGridProfile[pos] << 8) | _payloadGridProfile[pos + 1]);
+                float value = static_cast<int16_t>((_payloadGridProfile[pos] << 8) | _payloadGridProfile[pos + 1]);
                 value /= itemDefinition.Divider;
 
                 GridProfileItem_t v;

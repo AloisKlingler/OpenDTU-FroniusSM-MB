@@ -1,3 +1,9 @@
+export interface TaskDetail {
+    name: string;
+    stack_watermark: number;
+    priority: number;
+}
+
 export interface SystemStatus {
     // HardwareInfo
     chipmodel: string;
@@ -6,12 +12,15 @@ export interface SystemStatus {
     cpufreq: number;
     cputemp: number;
     flashsize: number;
+    // TaskDetails
+    task_details: TaskDetail[];
     // FirmwareInfo
     hostname: string;
     sdkversion: string;
     config_version: string;
     git_hash: string;
     git_is_hash: boolean;
+    git_branch: string;
     pioenv: string;
     resetreason_0: string;
     resetreason_1: string;

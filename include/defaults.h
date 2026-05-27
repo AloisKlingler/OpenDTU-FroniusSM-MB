@@ -13,7 +13,7 @@
 #define AUTH_USERNAME "admin"
 #define SECURITY_ALLOW_READONLY true
 
-#define WIFI_RECONNECT_TIMEOUT 30
+#define WIFI_RECONNECT_TIMEOUT 60
 #define WIFI_RECONNECT_REDO_TIMEOUT 600
 
 #define WIFI_SSID ""
@@ -29,9 +29,11 @@
 #define MODBUS_OPTIONS ""
 #define MODBUS_VERSION "1.0"
 
+#define SYSLOG_ENABLED false
+#define SYSLOG_PORT 514
+
 #define NTP_SERVER_OLD "pool.ntp.org"
 #define NTP_SERVER "opendtu.pool.ntp.org"
-#define NTP_TIMEZONE "CET-1CEST,M3.5.0,M10.5.0/3"
 #define NTP_TIMEZONEDESCR "Europe/Berlin"
 #define NTP_LONGITUDE 10.4515f
 #define NTP_LATITUDE 51.1657f
@@ -106,7 +108,7 @@
 #define DISPLAY_SCREENSAVER true
 #define DISPLAY_ROTATION 2U
 #define DISPLAY_CONTRAST 60U
-#define DISPLAY_LANGUAGE 0U
+#define DISPLAY_LOCALE "en"
 #define DISPLAY_DIAGRAM_DURATION (10UL * 60UL * 60UL)
 #define DISPLAY_DIAGRAM_MODE 1U
 
@@ -115,3 +117,5 @@
 #define LED_BRIGHTNESS 100U
 
 #define MAX_INVERTER_LIMIT 2250
+
+#define LANG_PACK_SUFFIX ".lang.json"

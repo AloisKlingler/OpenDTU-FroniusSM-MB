@@ -1,5 +1,5 @@
 <template>
-    <CardElement :text="$t('wifistationinfo.WifiStationInfo')" textVariant="text-bg-primary">
+    <CardElement :text="$t('wifistationinfo.WifiStationInfo')" textVariant="text-bg-primary" table>
         <div class="table-responsive">
             <table class="table table-hover table-condensed">
                 <tbody>
@@ -51,17 +51,9 @@ export default defineComponent({
     },
     methods: {
         getRSSIasQuality(rssi: number) {
-            let quality = 0;
-
-            if (rssi <= -100) {
-                quality = 0;
-            } else if (rssi >= -50) {
-                quality = 100;
-            } else {
-                quality = 2 * (rssi + 100);
-            }
-
-            return quality / 100;
+            if (rssi <= -100) return 0;
+            if (rssi >= -50) return 1;
+            return (2 * (rssi + 100)) / 100;
         },
     },
 });

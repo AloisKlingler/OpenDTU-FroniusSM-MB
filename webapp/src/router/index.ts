@@ -9,6 +9,7 @@ import HomeView from '@/views/HomeView.vue';
 import InverterAdminView from '@/views/InverterAdminView.vue';
 import LoginView from '@/views/LoginView.vue';
 import MaintenanceRebootView from '@/views/MaintenanceRebootView.vue';
+import LoggingAdminView from '@/views/LoggingAdminView.vue';
 import MqttAdminView from '@/views/MqttAdminView.vue';
 import MqttInfoView from '@/views/MqttInfoView.vue';
 import NetworkAdminView from '@/views/NetworkAdminView.vue';
@@ -17,11 +18,19 @@ import NtpAdminView from '@/views/NtpAdminView.vue';
 import NtpInfoView from '@/views/NtpInfoView.vue';
 import SecurityAdminView from '@/views/SecurityAdminView.vue';
 import SystemInfoView from '@/views/SystemInfoView.vue';
+import WaitRestartView from '@/views/WaitRestartView.vue';
 import { createRouter, createWebHistory } from 'vue-router';
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     linkActiveClass: 'active',
+    scrollBehavior() {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve({ top: 0 });
+            }, 100);
+        });
+    },
     routes: [
         {
             path: '/',
@@ -114,9 +123,19 @@ const router = createRouter({
             component: SecurityAdminView,
         },
         {
+            path: '/settings/logging',
+            name: 'Logging',
+            component: LoggingAdminView,
+        },
+        {
             path: '/maintenance/reboot',
             name: 'Device Reboot',
             component: MaintenanceRebootView,
+        },
+        {
+            path: '/wait',
+            name: 'Wait Restart',
+            component: WaitRestartView,
         },
     ],
 });

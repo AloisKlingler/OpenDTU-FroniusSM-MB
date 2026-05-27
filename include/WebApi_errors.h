@@ -18,9 +18,10 @@ enum WebApiError {
     DtuInvalidCmtFrequency,
     DtuInvalidCmtCountry,
 
-    ConfigBase = 3000,
-    ConfigNotDeleted,
-    ConfigSuccess,
+    FileBase = 3000,
+    FileNotDeleted,
+    FileSuccess,
+    FileDeleteSuccess,
 
     InverterBase = 4000,
     InverterSerialZero,
@@ -32,6 +33,7 @@ enum WebApiError {
     InverterChanged,
     InverterDeleted,
     InverterOrdered,
+    InverterStatsResetted,
 
     LimitBase = 5000,
     LimitSerialZero,
@@ -61,6 +63,7 @@ enum WebApiError {
     MqttHassTopicCharacter,
     MqttLwtQos,
     MqttClientIdLength,
+    MqttHassTopicTrailingSlash,
 
     NetworkBase = 8000,
     NetworkIpInvalid,
@@ -69,6 +72,8 @@ enum WebApiError {
     NetworkDns1Invalid,
     NetworkDns2Invalid,
     NetworkApTimeoutInvalid,
+    NetworkSyslogHostnameLength,
+    NetworkSyslogPort,
 
     NtpBase = 9000,
     NtpServerLength,

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (C) 2022-2024 Thomas Basler and others
+ * Copyright (C) 2022-2026 Thomas Basler and others
  */
 #include "WebApi_dtu.h"
 #include "Configuration.h"
@@ -18,8 +18,8 @@ void WebApiDtuClass::init(AsyncWebServer& server, Scheduler& scheduler)
 {
     using std::placeholders::_1;
 
-    server.on("/api/dtu/config", HTTP_GET, std::bind(&WebApiDtuClass::onDtuAdminGet, this, _1));
-    server.on("/api/dtu/config", HTTP_POST, std::bind(&WebApiDtuClass::onDtuAdminPost, this, _1));
+    server.on("/api/dtu/config", HTTP_GET, static_cast<ArRequestHandlerFunction>(std::bind(&WebApiDtuClass::onDtuAdminGet, this, _1)));
+    server.on("/api/dtu/config", HTTP_POST, static_cast<ArRequestHandlerFunction>(std::bind(&WebApiDtuClass::onDtuAdminPost, this, _1)));
 
     scheduler.addTask(_applyDataTask);
 }
@@ -27,7 +27,7 @@ void WebApiDtuClass::init(AsyncWebServer& server, Scheduler& scheduler)
 void WebApiDtuClass::applyDataTaskCb()
 {
     // Execute stuff in main thread to avoid busy SPI bus
-    CONFIG_T& config = Configuration.get();
+    auto const& config = Configuration.get();
     Hoymiles.getRadioNrf()->setPALevel((rf24_pa_dbm_e)config.Dtu.Nrf.PaLevel);
     Hoymiles.getRadioCmt()->setPALevel(config.Dtu.Cmt.PaLevel);
     Hoymiles.getRadioNrf()->setDtuSerial(config.Dtu.Serial);
@@ -49,9 +49,9 @@ void WebApiDtuClass::onDtuAdminGet(AsyncWebServerRequest* request)
 
     // DTU Serial is read as HEX
     char buffer[sizeof(uint64_t) * 8 + 1];
-    snprintf(buffer, sizeof(buffer), "%0x%08x",
-        ((uint32_t)((config.Dtu.Serial >> 32) & 0xFFFFFFFF)),
-        ((uint32_t)(config.Dtu.Serial & 0xFFFFFFFF)));
+    snprintf(buffer, sizeof(buffer), "%0" PRIx32 "%08" PRIx32,
+        static_cast<uint32_t>((config.Dtu.Serial >> 32) & 0xFFFFFFFF),
+        static_cast<uint32_t>(config.Dtu.Serial & 0xFFFFFFFF));
     root["serial"] = buffer;
     root["pollinterval"] = config.Dtu.PollInterval;
     root["nrf_enabled"] = Hoymiles.getRadioNrf()->isInitialized();
@@ -90,12 +90,12 @@ void WebApiDtuClass::onDtuAdminPost(AsyncWebServerRequest* request)
 
     auto& retMsg = response->getRoot();
 
-    if (!(root.containsKey("serial")
-            && root.containsKey("pollinterval")
-            && root.containsKey("nrf_palevel")
-            && root.containsKey("cmt_palevel")
-            && root.containsKey("cmt_frequency")
-            && root.containsKey("cmt_country"))) {
+    if (!(root["serial"].is<String>()
+            && root["pollinterval"].is<uint32_t>()
+            && root["nrf_palevel"].is<uint8_t>()
+            && root["cmt_palevel"].is<int8_t>()
+            && root["cmt_frequency"].is<uint32_t>()
+            && root["cmt_country"].is<uint8_t>())) {
         retMsg["message"] = "Values are missing!";
         retMsg["code"] = WebApiError::GenericValueMissing;
         WebApi.sendJsonResponse(request, response, __FUNCTION__, __LINE__);
@@ -153,14 +153,16 @@ void WebApiDtuClass::onDtuAdminPost(AsyncWebServerRequest* request)
         return;
     }
 
-    CONFIG_T& config = Configuration.get();
-
-    config.Dtu.Serial = serial;
-    config.Dtu.PollInterval = root["pollinterval"].as<uint32_t>();
-    config.Dtu.Nrf.PaLevel = root["nrf_palevel"].as<uint8_t>();
-    config.Dtu.Cmt.PaLevel = root["cmt_palevel"].as<int8_t>();
-    config.Dtu.Cmt.Frequency = root["cmt_frequency"].as<uint32_t>();
-    config.Dtu.Cmt.CountryMode = root["cmt_country"].as<CountryModeId_t>();
+    {
+        auto guard = Configuration.getWriteGuard();
+        auto& config = guard.getConfig();
+        config.Dtu.Serial = serial;
+        config.Dtu.PollInterval = root["pollinterval"].as<uint32_t>();
+        config.Dtu.Nrf.PaLevel = root["nrf_palevel"].as<uint8_t>();
+        config.Dtu.Cmt.PaLevel = root["cmt_palevel"].as<int8_t>();
+        config.Dtu.Cmt.Frequency = root["cmt_frequency"].as<uint32_t>();
+        config.Dtu.Cmt.CountryMode = root["cmt_country"].as<CountryModeId_t>();
+    }
 
     WebApi.writeConfig(retMsg);
 

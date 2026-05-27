@@ -1,7 +1,12 @@
 <template>
     <BasePage :title="$t('ntpadmin.NtpSettings')" :isLoading="dataLoading || timezoneLoading">
-        <BootstrapAlert v-model="showAlert" dismissible :variant="alertType">
-            {{ alertMessage }}
+        <BootstrapAlert
+            v-model="alert.show"
+            dismissible
+            :variant="alert.type"
+            :auto-dismiss="alert.type != 'success' ? 0 : 5000"
+        >
+            {{ alert.message }}
         </BootstrapAlert>
 
         <form @submit="saveNtpConfig">
@@ -18,11 +23,7 @@
                     <label for="inputTimezone" class="col-sm-2 col-form-label">{{ $t('ntpadmin.Timezone') }}</label>
                     <div class="col-sm-10">
                         <select class="form-select" v-model="timezoneSelect">
-                            <option
-                                v-for="(config, name) in timezoneList"
-                                :key="name + '---' + config"
-                                :value="name + '---' + config"
-                            >
+                            <option v-for="name in Object.keys(timezoneList ?? {})" :key="name" :value="name">
                                 {{ name }}
                             </option>
                         </select>
@@ -31,7 +32,7 @@
 
                 <InputElement
                     :label="$t('ntpadmin.TimezoneConfig')"
-                    v-model="ntpConfigList.ntp_timezone"
+                    v-model="timezoneInfo"
                     type="text"
                     maxlength="32"
                     disabled
@@ -95,6 +96,7 @@ import BootstrapAlert from '@/components/BootstrapAlert.vue';
 import CardElement from '@/components/CardElement.vue';
 import InputElement from '@/components/InputElement.vue';
 import FormFooter from '@/components/FormFooter.vue';
+import type { AlertResponse } from '@/types/AlertResponse';
 import type { NtpConfig } from '@/types/NtpConfig';
 import { authHeader, handleResponse } from '@/utils/authentication';
 import { defineComponent } from 'vue';
@@ -114,14 +116,13 @@ export default defineComponent({
             dataLoading: true,
             timezoneLoading: true,
             ntpConfigList: {} as NtpConfig,
-            timezoneList: {},
+            timezoneList: {} as Record<string, string>,
             timezoneSelect: '',
+            timezoneInfo: '',
             mcuTime: new Date(),
             localTime: new Date(),
             dataAgeInterval: 0,
-            alertMessage: '',
-            alertType: 'info',
-            showAlert: false,
+            alert: {} as AlertResponse,
             sunsetTypeList: [
                 { key: 0, value: 'OFFICIAL' },
                 { key: 1, value: 'NAUTICAL' },
@@ -132,13 +133,12 @@ export default defineComponent({
     },
     watch: {
         timezoneSelect: function (newValue) {
-            this.ntpConfigList.ntp_timezone = newValue.split('---')[1];
-            this.ntpConfigList.ntp_timezone_descr = newValue.split('---')[0];
+            this.timezoneInfo = this.timezoneList[newValue] ?? '';
+            this.ntpConfigList.ntp_timezone_descr = newValue;
         },
     },
     created() {
         this.getTimezoneList();
-        this.getNtpConfig();
         this.getCurrentTime();
         this.initDataAgeing();
     },
@@ -151,11 +151,12 @@ export default defineComponent({
         },
         getTimezoneList() {
             this.timezoneLoading = true;
-            fetch('/zones.json')
-                .then((response) => response.json())
+            fetch('/api/ntp/zones', { headers: authHeader() })
+                .then((response) => handleResponse(response, this.$emitter, this.$router))
                 .then((data) => {
                     this.timezoneList = data;
                     this.timezoneLoading = false;
+                    this.getNtpConfig();
                 });
         },
         getNtpConfig() {
@@ -164,8 +165,7 @@ export default defineComponent({
                 .then((response) => handleResponse(response, this.$emitter, this.$router))
                 .then((data) => {
                     this.ntpConfigList = data;
-                    this.timezoneSelect =
-                        this.ntpConfigList.ntp_timezone_descr + '---' + this.ntpConfigList.ntp_timezone;
+                    this.timezoneSelect = this.ntpConfigList.ntp_timezone_descr;
                     this.dataLoading = false;
                 });
         },
@@ -198,9 +198,9 @@ export default defineComponent({
             })
                 .then((response) => handleResponse(response, this.$emitter, this.$router))
                 .then((response) => {
-                    this.alertMessage = this.$t('apiresponse.' + response.code, response.param);
-                    this.alertType = response.type;
-                    this.showAlert = true;
+                    this.alert.message = this.$t('apiresponse.' + response.code, response.param);
+                    this.alert.type = response.type;
+                    this.alert.show = true;
                 })
                 .then(() => {
                     this.getCurrentTime();
@@ -219,9 +219,12 @@ export default defineComponent({
             })
                 .then((response) => handleResponse(response, this.$emitter, this.$router))
                 .then((response) => {
-                    this.alertMessage = this.$t('apiresponse.' + response.code, response.param);
-                    this.alertType = response.type;
-                    this.showAlert = true;
+                    this.alert.message = this.$t('apiresponse.' + response.code, response.param);
+                    this.alert.type = response.type;
+                    this.alert.show = true;
+                })
+                .then(() => {
+                    this.getCurrentTime();
                 });
         },
     },

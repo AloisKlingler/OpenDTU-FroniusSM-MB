@@ -3,6 +3,7 @@
 [![OpenDTU Build](https://github.com/tbnobody/OpenDTU/actions/workflows/build.yml/badge.svg)](https://github.com/tbnobody/OpenDTU/actions/workflows/build.yml)
 [![cpplint](https://github.com/tbnobody/OpenDTU/actions/workflows/cpplint.yml/badge.svg)](https://github.com/tbnobody/OpenDTU/actions/workflows/cpplint.yml)
 [![Yarn Linting](https://github.com/tbnobody/OpenDTU/actions/workflows/yarnlint.yml/badge.svg)](https://github.com/tbnobody/OpenDTU/actions/workflows/yarnlint.yml)
+[![Yarn Prettier](https://github.com/tbnobody/OpenDTU/actions/workflows/yarnprettier.yml/badge.svg)](https://github.com/tbnobody/OpenDTU/actions/workflows/yarnprettier.yml)
 
 ## !! IMPORTANT UPGRADE NOTES !!
 
@@ -23,6 +24,8 @@ Please feel free to support and create a PR in [this](https://github.com/tbnobod
 Generated using: `git log --date=short --pretty=format:"* %h%x09%ad%x09%s" | grep BREAKING`
 
 ```code
+* 8cab3335      2025-08-07      BREAKING CHANGE: WebAPI endpoint `/api/limit/config` requires different parameters
+* 8372deaf      2025-04-18      BREAKING CHANGE: Logging newline changed from "\r\n" to "\n"
 * 1b637f08      2024-01-30      BREAKING CHANGE: Web API Endpoint /api/livedata/status and /api/prometheus/metrics
 * e1564780      2024-01-30      BREAKING CHANGE: Web API Endpoint /api/livedata/status and /api/prometheus/metrics
 * f0b5542c      2024-01-30      BREAKING CHANGE: Web API Endpoint /api/livedata/status and /api/prometheus/metrics
@@ -40,41 +43,4 @@ Generated using: `git log --date=short --pretty=format:"* %h%x09%ad%x09%s" | gre
 
 ## Currently supported Inverters
 
-| Model                | Required RF Module | DC Inputs | MPP-Tracker | AC Phases |
-| ---------------------| ------------------ | --------- | ----------- | --------- |
-| Hoymiles HM-300-1T   | NRF24L01+          | 1         | 1           | 1         |
-| Hoymiles HM-350-1T   | NRF24L01+          | 1         | 1           | 1         |
-| Hoymiles HM-400-1T   | NRF24L01+          | 1         | 1           | 1         |
-| Hoymiles HM-600-2T   | NRF24L01+          | 2         | 2           | 1         |
-| Hoymiles HM-700-2T   | NRF24L01+          | 2         | 2           | 1         |
-| Hoymiles HM-800-2T   | NRF24L01+          | 2         | 2           | 1         |
-| Hoymiles HM-1000-4T  | NRF24L01+          | 4         | 2           | 1         |
-| Hoymiles HM-1200-4T  | NRF24L01+          | 4         | 2           | 1         |
-| Hoymiles HM-1500-4T  | NRF24L01+          | 4         | 2           | 1         |
-| Hoymiles HMS-300-1T  | CMT2300A           | 1         | 1           | 1         |
-| Hoymiles HMS-350-1T  | CMT2300A           | 1         | 1           | 1         |
-| Hoymiles HMS-400-1T  | CMT2300A           | 1         | 1           | 1         |
-| Hoymiles HMS-450-1T  | CMT2300A           | 1         | 1           | 1         |
-| Hoymiles HMS-500-1T  | CMT2300A           | 1         | 1           | 1         |
-| Hoymiles HMS-600-2T  | CMT2300A           | 2         | 2           | 1         |
-| Hoymiles HMS-700-2T  | CMT2300A           | 2         | 2           | 1         |
-| Hoymiles HMS-800-2T  | CMT2300A           | 2         | 2           | 1         |
-| Hoymiles HMS-900-2T  | CMT2300A           | 2         | 2           | 1         |
-| Hoymiles HMS-1000-2T | CMT2300A           | 2         | 2           | 1         |
-| Hoymiles HMS-1600-4T | CMT2300A           | 4         | 4           | 1         |
-| Hoymiles HMS-1800-4T | CMT2300A           | 4         | 4           | 1         |
-| Hoymiles HMS-2000-4T | CMT2300A           | 4         | 4           | 1         |
-| Hoymiles HMT-1600-4T | CMT2300A           | 4         | 2           | 3         |
-| Hoymiles HMT-1800-4T | CMT2300A           | 4         | 2           | 3         |
-| Hoymiles HMT-2000-4T | CMT2300A           | 4         | 2           | 3         |
-| Hoymiles HMT-1800-6T | CMT2300A           | 6         | 3           | 3         |
-| Hoymiles HMT-2250-6T | CMT2300A           | 6         | 3           | 3         |
-| Solenso SOL-H350     | NRF24L01+          | 1         | 1           | 1         |
-| Solenso SOL-H400     | NRF24L01+          | 1         | 1           | 1         |
-| Solenso SOL-H800     | NRF24L01+          | 2         | 2           | 1         |
-| TSUN TSOL-M350       | NRF24L01+          | 1         | 1           | 1         |
-| TSUN TSOL-M800       | NRF24L01+          | 2         | 2           | 1         |
-| TSUN TSOL-M1600      | NRF24L01+          | 4         | 2           | 1         |
-| E-Star HERF-800      | NRF24L01+          | 2         | 2           | 1         |
-| E-Star HERF-1600     | NRF24L01+          | 4         | 2           | 1         |
-| E-Star HERF-1800     | NRF24L01+          | 4         | 2           | 1         |
+A list of all currently supported inverters can be found [here](https://www.opendtu.solar/hardware/inverter_overview/)

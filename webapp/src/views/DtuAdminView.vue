@@ -1,7 +1,12 @@
 <template>
     <BasePage :title="$t('dtuadmin.DtuSettings')" :isLoading="dataLoading">
-        <BootstrapAlert v-model="showAlert" dismissible :variant="alertType">
-            {{ alertMessage }}
+        <BootstrapAlert
+            v-model="alert.show"
+            dismissible
+            :variant="alert.type"
+            :auto-dismiss="alert.type != 'success' ? 0 : 5000"
+        >
+            {{ alert.message }}
         </BootstrapAlert>
 
         <form @submit="saveDtuConfig">
@@ -9,9 +14,9 @@
                 <InputElement
                     :label="$t('dtuadmin.Serial')"
                     v-model="dtuConfigList.serial"
-                    type="number"
-                    min="1"
-                    max="199999999999"
+                    type="text"
+                    minlength="12"
+                    maxlength="12"
                     :tooltip="$t('dtuadmin.SerialHint')"
                 />
 
@@ -44,11 +49,11 @@
                         <BIconInfoCircle v-tooltip :title="$t('dtuadmin.CmtPaLevelHint')" />
                     </label>
                     <div class="col-sm-10">
-                        <div class="input-group mb-3">
+                        <div class="input-group">
                             <input
                                 type="range"
                                 class="form-control form-range"
-                                v-model="dtuConfigList.cmt_palevel"
+                                v-model.number="dtuConfigList.cmt_palevel"
                                 min="-10"
                                 max="20"
                                 id="inputCmtPaLevel"
@@ -85,11 +90,11 @@
                         <BIconInfoCircle v-tooltip :title="$t('dtuadmin.CmtFrequencyHint')" />
                     </label>
                     <div class="col-sm-10">
-                        <div class="input-group mb-3">
+                        <div class="input-group">
                             <input
                                 type="range"
                                 class="form-control form-range"
-                                v-model="dtuConfigList.cmt_frequency"
+                                v-model.number="dtuConfigList.cmt_frequency"
                                 :min="cmtMinFrequency"
                                 :max="cmtMaxFrequency"
                                 :step="dtuConfigList.cmt_chan_width"
@@ -119,6 +124,7 @@ import BootstrapAlert from '@/components/BootstrapAlert.vue';
 import CardElement from '@/components/CardElement.vue';
 import FormFooter from '@/components/FormFooter.vue';
 import InputElement from '@/components/InputElement.vue';
+import type { AlertResponse } from '@/types/AlertResponse';
 import type { DtuConfig } from '@/types/DtuConfig';
 import { authHeader, handleResponse } from '@/utils/authentication';
 import { BIconInfoCircle } from 'bootstrap-icons-vue';
@@ -143,9 +149,7 @@ export default defineComponent({
                 { key: 2, value: 'High', db: '-6' },
                 { key: 3, value: 'Max', db: '0' },
             ],
-            alertMessage: '',
-            alertType: 'info',
-            showAlert: false,
+            alert: {} as AlertResponse,
         };
     },
     created() {
@@ -161,17 +165,19 @@ export default defineComponent({
             return this.$t('dtuadmin.dBm', { dbm: this.$n(this.dtuConfigList.cmt_palevel * 1) });
         },
         cmtMinFrequency() {
-            return this.dtuConfigList.country_def[this.dtuConfigList.cmt_country].freq_min;
+            return this.dtuConfigList.country_def?.[this.dtuConfigList.cmt_country]?.freq_min;
         },
         cmtMaxFrequency() {
-            return this.dtuConfigList.country_def[this.dtuConfigList.cmt_country].freq_max;
+            return this.dtuConfigList.country_def?.[this.dtuConfigList.cmt_country]?.freq_max;
         },
         cmtIsOutOfLegalRange() {
+            const country = this.dtuConfigList.country_def?.[this.dtuConfigList.cmt_country];
+            if (!country) {
+                return false;
+            }
             return (
-                this.dtuConfigList.cmt_frequency <
-                    this.dtuConfigList.country_def[this.dtuConfigList.cmt_country].freq_legal_min ||
-                this.dtuConfigList.cmt_frequency >
-                    this.dtuConfigList.country_def[this.dtuConfigList.cmt_country].freq_legal_max
+                this.dtuConfigList.cmt_frequency < country.freq_legal_min ||
+                this.dtuConfigList.cmt_frequency > country.freq_legal_max
             );
         },
     },
@@ -180,7 +186,9 @@ export default defineComponent({
             // Don't do anything on initial load (then oldValue equals undefined)
             if (oldValue != undefined) {
                 this.$nextTick(() => {
-                    this.dtuConfigList.cmt_frequency = this.dtuConfigList.country_def[newValue].freq_default;
+                    if (this.dtuConfigList.country_def[newValue]) {
+                        this.dtuConfigList.cmt_frequency = this.dtuConfigList.country_def[newValue].freq_default;
+                    }
                 });
             }
         },
@@ -208,9 +216,9 @@ export default defineComponent({
             })
                 .then((response) => handleResponse(response, this.$emitter, this.$router))
                 .then((response) => {
-                    this.alertMessage = this.$t('apiresponse.' + response.code, response.param);
-                    this.alertType = response.type;
-                    this.showAlert = true;
+                    this.alert.message = this.$t('apiresponse.' + response.code, response.param);
+                    this.alert.type = response.type;
+                    this.alert.show = true;
                 });
         },
     },

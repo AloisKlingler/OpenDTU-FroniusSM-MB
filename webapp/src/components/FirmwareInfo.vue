@@ -1,5 +1,5 @@
 <template>
-    <CardElement :text="$t('firmwareinfo.FirmwareInformation')" textVariant="text-bg-primary">
+    <CardElement :text="$t('firmwareinfo.FirmwareInformation')" textVariant="text-bg-primary" table>
         <div class="table-responsive">
             <table class="table table-hover table-condensed">
                 <tbody>
@@ -27,6 +27,10 @@
                                 {{ systemStatus.git_hash }}
                             </a>
                         </td>
+                    </tr>
+                    <tr>
+                        <th>{{ $t('firmwareinfo.FirmwareBranch') }}</th>
+                        <td>{{ systemStatus.git_branch }}</td>
                     </tr>
                     <tr>
                         <th>{{ $t('firmwareinfo.PioEnv') }}</th>

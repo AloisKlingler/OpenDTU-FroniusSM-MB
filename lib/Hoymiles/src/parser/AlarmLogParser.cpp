@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (C) 2022-2024 Thomas Basler and others
+ * Copyright (C) 2022-2026 Thomas Basler and others
  */
 
 /*
@@ -23,8 +23,11 @@ Data structure:
 ID   Source Addr   Target Addr   Idx  ?       wcode   ?       Start   End     ?    ?    ?    ?    wcode   CRC8
 */
 #include "AlarmLogParser.h"
-#include "../Hoymiles.h"
 #include <cstring>
+#include <esp_log.h>
+
+#undef TAG
+static const char* TAG = "hoymiles";
 
 const std::array<const AlarmMessage_t, ALARM_MSG_COUNT> AlarmLogParser::_alarmMessages = { {
     { AlarmMessageType_t::ALL, 1, "Inverter start", "Wechselrichter gestartet", "L'onduleur a démarré" },
@@ -205,7 +208,7 @@ void AlarmLogParser::clearBuffer()
 void AlarmLogParser::appendFragment(const uint8_t offset, const uint8_t* payload, const uint8_t len)
 {
     if (offset + len > ALARM_LOG_PAYLOAD_SIZE) {
-        Hoymiles.getMessageOutput()->printf("FATAL: (%s, %d) stats packet too large for buffer (%d > %d)\r\n", __FILE__, __LINE__, offset + len, ALARM_LOG_PAYLOAD_SIZE);
+        ESP_LOGE(TAG, "(%s, %d) stats packet too large for buffer (%d > %d)", __FILE__, __LINE__, offset + len, ALARM_LOG_PAYLOAD_SIZE);
         return;
     }
     memcpy(&_payloadAlarmLog[offset], payload, len);
@@ -243,7 +246,7 @@ void AlarmLogParser::getLogEntry(const uint8_t entryId, AlarmLogEntry_t& entry, 
 
     HOY_SEMAPHORE_TAKE();
 
-    const uint32_t wcode = (uint16_t)_payloadAlarmLog[entryStartOffset] << 8 | _payloadAlarmLog[entryStartOffset + 1];
+    const uint32_t wcode = static_cast<uint16_t>(_payloadAlarmLog[entryStartOffset]) << 8 | _payloadAlarmLog[entryStartOffset + 1];
     uint32_t startTimeOffset = 0;
     if (((wcode >> 13) & 0x01) == 1) {
         startTimeOffset = 12 * 60 * 60;
@@ -255,8 +258,8 @@ void AlarmLogParser::getLogEntry(const uint8_t entryId, AlarmLogEntry_t& entry, 
     }
 
     entry.MessageId = _payloadAlarmLog[entryStartOffset + 1];
-    entry.StartTime = (((uint16_t)_payloadAlarmLog[entryStartOffset + 4] << 8) | ((uint16_t)_payloadAlarmLog[entryStartOffset + 5])) + startTimeOffset + timezoneOffset;
-    entry.EndTime = ((uint16_t)_payloadAlarmLog[entryStartOffset + 6] << 8) | ((uint16_t)_payloadAlarmLog[entryStartOffset + 7]);
+    entry.StartTime = ((static_cast<uint16_t>(_payloadAlarmLog[entryStartOffset + 4]) << 8) | static_cast<uint16_t>(_payloadAlarmLog[entryStartOffset + 5])) + startTimeOffset + timezoneOffset;
+    entry.EndTime = (static_cast<uint16_t>(_payloadAlarmLog[entryStartOffset + 6]) << 8) | static_cast<uint16_t>(_payloadAlarmLog[entryStartOffset + 7]);
 
     HOY_SEMAPHORE_GIVE();
 
