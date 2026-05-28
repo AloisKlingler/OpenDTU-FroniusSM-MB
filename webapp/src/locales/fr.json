@@ -466,7 +466,7 @@
         "Minutes": "minutes",
         "EnableMdns": "Activer mDNS",
         "MdnsSettings": "mDNS Settings",
-                "ModbusSettings": "Modbus-Einstellungen",
+        "ModbusSettings": "Modbus-Einstellungen",
         "EnableModbusTCP": "Activer Modbus TCP server",
         "EnableModbusTCPHint": "Activer le serveur Modbus TCP compatible SunSpec sur le port 502",
         "DelayModbusStart": "Retarder le démarrage du serveur Modbus TCP",
