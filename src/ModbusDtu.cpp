@@ -1,6 +1,10 @@
 #include "ModbusDtu.h"
 #include "Datastore.h"
 #include "MessageOutput.h"
+#include <esp_log.h>
+
+#undef TAG
+static const char* TAG = "ModbusDtu";
 
 ModbusIP mb;
 
@@ -27,7 +31,7 @@ void ModbusDtuClass::modbus()
 void ModbusDtuClass::setup()
 {
     if ((Configuration.get().Dtu.Serial) < 0x100000000000 || (Configuration.get().Dtu.Serial) > 0x199999999999) {
-        MessageOutput.printf("Modbus: need a DTU Serial between 100000000000 and 199999999999 (currently configured: %llx)\r\n", Configuration.get().Dtu.Serial);
+        ESP_LOGI(TAG, "Modbus: need a DTU Serial between 100000000000 and 199999999999 (currently configured: %llx)", Configuration.get().Dtu.Serial);
         _isstarted = false;
         return;
     }
@@ -66,11 +70,11 @@ void ModbusDtuClass::setup()
     }
     const char *serialconfig = Configuration.get().modbus.serial;
     if (!strlen(serialconfig)) {
-        char serial[24];
+        char *serial = (char*)malloc(24);
         uint16_t *hexbytes = reinterpret_cast<uint16_t *>(serial);
         snprintf(serial,sizeof(serial),"%llx",(Configuration.get().Dtu.Serial));
-        MessageOutput.printf("Modbus: init uses DTU Serial: %llx\r\n", Configuration.get().Dtu.Serial);
-        MessageOutput.printf("Modbus: writing to init modbus registers %d %d %d %d %d %d\r\n", ntohs(hexbytes[0]), ntohs(hexbytes[1]), ntohs(hexbytes[2]), ntohs(hexbytes[3]), ntohs(hexbytes[4]), ntohs(hexbytes[5]));
+        ESP_LOGI(TAG, "Modbus: init uses DTU Serial: %llx", Configuration.get().Dtu.Serial);
+        ESP_LOGI(TAG, "Modbus: writing to init modbus registers %d %d %d %d %d %d", ntohs(hexbytes[0]), ntohs(hexbytes[1]), ntohs(hexbytes[2]), ntohs(hexbytes[3]), ntohs(hexbytes[4]), ntohs(hexbytes[5]));
         for (uint8_t i = 0; i < 6; i++) {
             mb.addHreg(0x9c74 + i, ntohs(hexbytes[i])); //40052 Serial Number start
         }
@@ -105,17 +109,17 @@ void ModbusDtuClass::loop()
 
     if (!_isstarted) {
         if (!(Configuration.get().modbus.modbus_delaystart) || (Datastore.getIsAllEnabledReachable() && Datastore.getTotalAcYieldTotalEnabled() != 0)) {
-            MessageOutput.printf("Modbus: starting server ... \r\n");
+            ESP_LOGI(TAG, "Modbus: starting server ...");
             ModbusDtu.setup();
             _modbusTask.enable();
         } else {
-            MessageOutput.printf("Modbus: not initializing yet! (Total Yield = 0 or not all configured inverters reachable)\r\n");
+            ESP_LOGI(TAG, "Modbus: not initializing yet! (Total Yield = 0 or not all configured inverters reachable)");
             return;
         }
     }
 
     if (!(Datastore.getIsAllEnabledReachable()) || !(Datastore.getTotalAcYieldTotalEnabled() != 0) || (!_isstarted) || !(Configuration.get().modbus.modbus_delaystart)) {
-        MessageOutput.printf("Modbus: not updating registers! (Total Yield = 0 or not all configured inverters reachable)\r\n");
+        ESP_LOGI(TAG, "Modbus: not updating registers! (Total Yield = 0 or not all configured inverters reachable)");
         return;
     } else {
         float value;
