@@ -70,7 +70,7 @@ void ModbusDtuClass::setup()
     }
     const char *serialconfig = Configuration.get().modbus.serial;
     if (!strlen(serialconfig)) {
-        char *serial = (char*)malloc(24);
+        char *serial = static_cast<char*>(malloc(24));
         uint16_t *hexbytes = reinterpret_cast<uint16_t *>(serial);
         snprintf(serial,sizeof(serial),"%llx",(Configuration.get().Dtu.Serial));
         ESP_LOGI(TAG, "Modbus: init uses DTU Serial: %llx", Configuration.get().Dtu.Serial);
