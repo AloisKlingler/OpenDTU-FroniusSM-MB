@@ -75,12 +75,21 @@ void MqttHandleHassClass::publishConfig()
     publishDtuSensor("Largest Free Heap Block", "dtu/heap/maxalloc", "Bytes", "mdi:memory", DEVICE_CLS_NONE, STATE_CLS_NONE, CATEGORY_DIAGNOSTIC);
     publishDtuSensor("Lifetime Minimum Free Heap", "dtu/heap/minfree", "Bytes", "mdi:memory", DEVICE_CLS_NONE, STATE_CLS_NONE, CATEGORY_DIAGNOSTIC);
 
+    if (ESP.getPsramSize() > 0) {
+        publishDtuSensor("PSRAM Size", "dtu/psram/size", "Bytes", "mdi:memory", DEVICE_CLS_NONE, STATE_CLS_NONE, CATEGORY_DIAGNOSTIC);
+        publishDtuSensor("PSRAM Free", "dtu/psram/free", "Bytes", "mdi:memory", DEVICE_CLS_NONE, STATE_CLS_NONE, CATEGORY_DIAGNOSTIC);
+        publishDtuSensor("Largest Free PSRAM Block", "dtu/psram/maxalloc", "Bytes", "mdi:memory", DEVICE_CLS_NONE, STATE_CLS_NONE, CATEGORY_DIAGNOSTIC);
+        publishDtuSensor("Lifetime Minimum Free PSRAM", "dtu/psram/minfree", "Bytes", "mdi:memory", DEVICE_CLS_NONE, STATE_CLS_NONE, CATEGORY_DIAGNOSTIC);
+    }
+
     publishDtuSensor("Yield Total", "ac/yieldtotal", "kWh", "", DEVICE_CLS_ENERGY, STATE_CLS_TOTAL_INCREASING, CATEGORY_NONE);
     publishDtuSensor("Yield Day", "ac/yieldday", "Wh", "", DEVICE_CLS_ENERGY, STATE_CLS_TOTAL_INCREASING, CATEGORY_NONE);
     publishDtuSensor("AC Power", "ac/power", "W", "", DEVICE_CLS_PWR, STATE_CLS_MEASUREMENT, CATEGORY_NONE);
     publishDtuSensor("DC Power", "dc/power", "W", "", DEVICE_CLS_PWR, STATE_CLS_MEASUREMENT, CATEGORY_NONE);
 
     publishDtuBinarySensor("Status", config.Mqtt.Lwt.Topic, config.Mqtt.Lwt.Value_Online, config.Mqtt.Lwt.Value_Offline, DEVICE_CLS_CONNECTIVITY, STATE_CLS_NONE, CATEGORY_DIAGNOSTIC);
+
+    publishDtuButton("Restart OpenDTU", "dtu/cmd/restart", "1", "", DEVICE_CLS_RESTART, STATE_CLS_NONE, CATEGORY_CONFIG);
 
     // Loop all inverters
     for (uint8_t i = 0; i < Hoymiles.getNumInverters(); i++) {
@@ -371,6 +380,35 @@ void MqttHandleHassClass::publishDtuBinarySensor(
     JsonDocument root;
     createDtuInfo(root);
     publishBinarySensor(root, dtuId, dtuId, name, state_topic, payload_on, payload_off, device_class, state_class, category);
+}
+
+void MqttHandleHassClass::publishDtuButton(
+    const String& name, const String& cmd_topic, const String& payload,
+    const String& icon,
+    const DeviceClassType device_class, const StateClassType state_class, const CategoryType category)
+{
+    const String dtuId = getDtuUniqueId();
+
+    String buttonId = name;
+    buttonId.replace(" ", "_");
+    buttonId.toLowerCase();
+
+    const String configTopic = "button/" + dtuId
+        + "/" + buttonId
+        + "/config";
+
+    const String fullCmdTopic = MqttSettings.getPrefix() + cmd_topic;
+
+    JsonDocument root;
+    createDtuInfo(root);
+    addCommonMetadata(root, "", icon, device_class, state_class, category);
+
+    root["name"] = name;
+    root["uniq_id"] = dtuId + "_" + buttonId;
+    root["cmd_t"] = fullCmdTopic;
+    root["payload_press"] = payload;
+
+    publish(configTopic, root);
 }
 
 void MqttHandleHassClass::publishInverterBinarySensor(

@@ -40,8 +40,12 @@ void WebApiSysstatusClass::onSystemStatus(AsyncWebServerRequest* request)
     root["heap_used"] = ESP.getHeapSize() - ESP.getFreeHeap();
     root["heap_max_block"] = ESP.getMaxAllocHeap();
     root["heap_min_free"] = ESP.getMinFreeHeap();
+
     root["psram_total"] = ESP.getPsramSize();
     root["psram_used"] = ESP.getPsramSize() - ESP.getFreePsram();
+    root["psram_max_block"] = ESP.getMaxAllocPsram();
+    root["psram_min_free"] = ESP.getMinFreePsram();
+
     root["sketch_total"] = ESP.getFreeSketchSpace();
     root["sketch_used"] = ESP.getSketchSize();
     root["littlefs_total"] = LittleFS.totalBytes();
@@ -66,6 +70,7 @@ void WebApiSysstatusClass::onSystemStatus(AsyncWebServerRequest* request)
         task["name"] = task_name;
         task["stack_watermark"] = uxTaskGetStackHighWaterMark(handle);
         task["priority"] = uxTaskPriorityGet(handle);
+        task["core"] = xTaskGetAffinity(handle);
     }
 
     String reason;
@@ -82,6 +87,7 @@ void WebApiSysstatusClass::onSystemStatus(AsyncWebServerRequest* request)
     root["config_version"] = version;
     root["git_hash"] = __COMPILED_GIT_HASH__;
     root["git_branch"] = __COMPILED_GIT_BRANCH__;
+    root["compile_datetime"] = __COMPILED_DATE_TIME_UTC_STR__;
     root["pioenv"] = PIOENV;
 
     root["uptime"] = esp_timer_get_time() / 1000000;

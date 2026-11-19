@@ -121,7 +121,8 @@
         "10002": "Authentication successful!",
         "11001": "@:apiresponse.2001",
         "11002": "@:apiresponse.5004",
-        "12001": "Profile name must between 1 and {max} characters long!"
+        "12001": "Profile name must between 1 and {max} characters long!",
+        "12002": "Diagram display duration must be a number between {min} and {max}!"
     },
     "home": {
         "LiveData": "Live Data",
@@ -189,6 +190,8 @@
         "HardwarePartNumber": "Hardware Part Number",
         "HardwareVersion": "Hardware Version",
         "SupportsPowerDistributionLogic": "'Power Distribution Logic' supported",
+        "RfHardwareVersion": "RF Module Hardware Version",
+        "RfFirmwareVersion": "RF Module Firmware Version",
         "Yes": "@:base.Yes",
         "No": "@:base.No"
     },
@@ -215,6 +218,7 @@
         "ConfigVersion": "Config Version",
         "FirmwareVersion": "Firmware Version / Git Hash",
         "FirmwareBranch": "Firmware Branch",
+        "CompileDateTime": "Compile Date/Time (UTC)",
         "PioEnv": "PIO Environment",
         "FirmwareVersionHint": "Click here to show information about your current version",
         "FirmwareUpdate": "Firmware Update",
@@ -248,8 +252,9 @@
         "LittleFs": "LittleFs",
         "Sketch": "Sketch"
     },
-    "heapdetails": {
+    "memorydetails": {
         "HeapDetails": "Heap Details",
+        "PsramDetails": "PSRAM Details",
         "TotalFree": "Total free",
         "LargestFreeBlock": "Biggest contiguous free block",
         "MaxUsage": "Maximum usage since start",
@@ -260,6 +265,7 @@
         "Name": "Name",
         "StackFree": "Stack Free",
         "Priority": "Priority",
+        "Core": "Core",
         "Task_idle0": "Idle (CPU Core 0)",
         "Task_idle1": "Idle (CPU Core 1)",
         "Task_wifi": "Wi-Fi",
@@ -382,6 +388,7 @@
     },
     "inverterchannelproperty": {
         "Power": "Power",
+        "MaxDailyPower": "Max Power",
         "Voltage": "Voltage",
         "Current": "Current",
         "Power DC": "Power DC",
@@ -389,6 +396,7 @@
         "YieldTotal": "YieldTotal",
         "Frequency": "Frequency",
         "Temperature": "Temperature",
+        "MaxTemperature": "Max Temperature",
         "PowerFactor": "PowerFactor",
         "ReactivePower": "ReactivePower",
         "Efficiency": "Efficiency",
@@ -466,7 +474,7 @@
         "WifiSsid": "WiFi SSID",
         "WifiPassword": "WiFi Password",
         "Hostname": "Hostname",
-        "HostnameHint": "<b>Hint:</b> The text <span class=\"font-monospace\">%06X</span> will be replaced with the last 6 digits of the ESP ChipID in hex format.",
+        "HostnameHint": "<b>Hint:</b> The text <span class=\"font-monospace\">$id$</span> will be replaced with the last 6 digits of the ESP ChipID in hex format.",
         "EnableDhcp": "Enable DHCP",
         "StaticIpConfiguration": "Static IP Configuration",
         "IpAddress": "IP Address",
@@ -694,9 +702,7 @@
         "LedBrightness": "LED {led} brightness ({brightness})"
     },
     "pininfo": {
-        "Category": "Category",
         "Name": "Name",
-        "Number": "Number",
         "ValueSelected": "Selected",
         "ValueActive": "Active"
     },

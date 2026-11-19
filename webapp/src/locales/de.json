@@ -121,7 +121,8 @@
         "10002": "Authentifizierung erfolgreich!",
         "11001": "@:apiresponse.2001",
         "11002": "@:apiresponse.5004",
-        "12001": "Profilname muss zwischen 1 und {max} Zeichen lang sein!"
+        "12001": "Profilname muss zwischen 1 und {max} Zeichen lang sein!",
+        "12002": "Diagramm Anzeigedauer muss eine Zahl zwischen {min} und {max} sein!"
     },
     "home": {
         "LiveData": "Live-Daten",
@@ -189,6 +190,8 @@
         "HardwarePartNumber": "Hardware-Teilenummer",
         "HardwareVersion": "Hardware-Version",
         "SupportsPowerDistributionLogic": "'Power Distribution Logic' unterstützt",
+        "RfHardwareVersion": "RF-Modul Hardware-Version",
+        "RfFirmwareVersion": "RF-Modul Firmware-Version",
         "Yes": "@:base.Yes",
         "No": "@:base.No"
     },
@@ -215,6 +218,7 @@
         "ConfigVersion": "Konfigurationsversion",
         "FirmwareVersion": "Firmwareversion / Git Hash",
         "FirmwareBranch": "Firmware Branch",
+        "CompileDateTime": "Kompilierung Datum/Zeit (UTC)",
         "PioEnv": "PIO Umgebung",
         "FirmwareVersionHint": "Klicke hier, um Informationen über die installierte Version anzuzeigen",
         "FirmwareUpdate": "Firmware-Aktualisierung",
@@ -248,8 +252,9 @@
         "LittleFs": "LittleFs",
         "Sketch": "Sketch"
     },
-    "heapdetails": {
+    "memorydetails": {
         "HeapDetails": "Detailinformationen zum Heap",
+        "PsramDetails": "Detailinformationen zum PSRAM",
         "TotalFree": "Insgesamt frei",
         "LargestFreeBlock": "Größter zusammenhängender freier Block",
         "MaxUsage": "Maximale Speichernutzung seit Start",
@@ -260,6 +265,7 @@
         "Name": "Name",
         "StackFree": "Stack Frei",
         "Priority": "Priorität",
+        "Core": "Kern",
         "Task_idle0": "Leerlauf (CPU-Kern 0)",
         "Task_idle1": "Leerlauf (CPU-Kern 1)",
         "Task_wifi": "Wi-Fi",
@@ -371,7 +377,7 @@
         "LogLevel": "Protokollierungsstufe ({cnt})"
     },
     "inverterchannelinfo": {
-        "String": "String {num}",
+        "String": "Strang {num}",
         "Phase": "Phase {num}",
         "General": "Allgemein"
     },
@@ -382,6 +388,7 @@
     },
     "inverterchannelproperty": {
         "Power": "Leistung",
+        "MaxDailyPower": "Max. Leistung",
         "Voltage": "Spannung",
         "Current": "Strom",
         "Power DC": "DC-Leistung",
@@ -389,6 +396,7 @@
         "YieldTotal": "Gesamtertrag",
         "Frequency": "Frequenz",
         "Temperature": "Temperatur",
+        "MaxTemperature": "Max. Temperatur",
         "PowerFactor": "Leistungsfaktor",
         "ReactivePower": "Blindleistung",
         "Efficiency": "Wirkungsgrad",
@@ -466,7 +474,7 @@
         "WifiSsid": "WLAN-SSID",
         "WifiPassword": "WLAN-Passwort",
         "Hostname": "Hostname",
-        "HostnameHint": "<b>Hinweis:</b> Der Text <span class=\"font-monospace\">%06X</span> wird durch die letzten 6 Ziffern der ESP-ChipID im Hex-Format ersetzt.",
+        "HostnameHint": "<b>Hinweis:</b> Der Text <span class=\"font-monospace\">$id$</span> wird durch die letzten 6 Ziffern der ESP-ChipID im Hex-Format ersetzt.",
         "EnableDhcp": "DHCP aktivieren",
         "StaticIpConfiguration": "Statische IP-Konfiguration",
         "IpAddress": "IP-Adresse",
@@ -560,7 +568,7 @@
         "DeleteInverter": "Wechselrichter löschen",
         "EditInverter": "Wechselrichter bearbeiten",
         "General": "Allgemein",
-        "String": "String",
+        "String": "Strang",
         "Advanced": "Erweitert",
         "InverterSerial": "Wechselrichter Seriennummer:",
         "InverterName": "Wechselrichter Name:",
@@ -570,11 +578,11 @@
         "PollEnableNight": "Daten auch nachts abrufen",
         "CommandEnable": "Befehle senden",
         "CommandEnableNight": "Befehle auch nachts senden",
-        "StringName": "Stringname {num}:",
+        "StringName": "Strangname {num}:",
         "StringNameHint": "Hier kann ein eigener Name für den entsprechenden Port des Wechselrichters angegeben werden.",
-        "StringMaxPower": "Max. Leistung String {num}:",
+        "StringMaxPower": "Max. Leistung Strang {num}:",
         "StringMaxPowerHint": "Eingabe der maximalen Leistung der angeschlossenen Solarmodule.",
-        "StringYtOffset": "Ertragsversatz String {num}:",
+        "StringYtOffset": "Ertragsversatz Strang {num}:",
         "StringYtOffsetHint": "Dieser Offset wird beim Auslesen des Gesamtertragswertes des Wechselrichters angewendet. Damit kann der Gesamtertrag des Wechselrichters auf Null gesetzt werden, wenn ein gebrauchter Wechselrichter verwendet wird.",
         "InverterHint": "*) Gib die W<sub>p</sub> des Ports ein, um die Einstrahlung zu errechnen.",
         "ReachableThreshold": "Erreichbarkeit Schwellenwert",
@@ -694,7 +702,6 @@
         "LedBrightness": "LED {led} Helligkeit ({brightness})"
     },
     "pininfo": {
-        "Category": "Kategorie",
         "Name": "Name",
         "ValueSelected": "Ausgewählt",
         "ValueActive": "Aktiv"
