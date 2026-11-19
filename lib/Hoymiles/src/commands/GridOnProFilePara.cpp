@@ -42,13 +42,16 @@ bool GridOnProFilePara::handleResponse(const fragment_t fragment[], const uint8_
         return false;
     }
 
-    // Move all fragments into target buffer
     uint8_t offs = 0;
     _inv->GridProfile()->beginAppendFragment();
     _inv->GridProfile()->clearBuffer();
     for (uint8_t i = 0; i < max_fragment_id; i++) {
-        _inv->GridProfile()->appendFragment(offs, fragment[i].fragment, fragment[i].len);
-        offs += (fragment[i].len);
+        uint8_t len = fragment[i].len;
+        if (i == max_fragment_id - 1) {
+            len = (len >= 2) ? (len - 2) : 0;
+        }
+        _inv->GridProfile()->appendFragment(offs, fragment[i].fragment, len);
+        offs += len;
     }
     _inv->GridProfile()->endAppendFragment();
     _inv->GridProfile()->setLastUpdate(millis());

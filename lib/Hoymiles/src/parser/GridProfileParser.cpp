@@ -510,3 +510,81 @@ int16_t GridProfileParser::getSectionStart(const uint8_t section_id, const uint8
     }
     return count;
 }
+
+void GridProfileParser::setLastWriteCommandSuccess(const LastCommandSuccess status)
+{
+    _lastWriteCommandSuccess = status;
+    _lastWriteUpdate = millis();
+}
+
+LastCommandSuccess GridProfileParser::getLastWriteCommandSuccess() const
+{
+    return _lastWriteCommandSuccess;
+}
+
+uint32_t GridProfileParser::getLastWriteUpdate() const
+{
+    return _lastWriteUpdate;
+}
+
+std::vector<uint8_t> GridProfileParser::encodeUpdatedValues(const std::list<GridProfileSection_t>& sections) const
+{
+    std::vector<uint8_t> out;
+    if (_gridProfileLength <= 4) {
+        return out;
+    }
+
+    HOY_SEMAPHORE_TAKE();
+    out.assign(_payloadGridProfile, _payloadGridProfile + _gridProfileLength);
+    const uint16_t bufLen = _gridProfileLength;
+    HOY_SEMAPHORE_GIVE();
+
+    auto sectionIt = sections.begin();
+    uint16_t pos = 4;
+
+    while (pos < bufLen && sectionIt != sections.end()) {
+        const uint8_t section_id = out[pos];
+        const uint8_t section_version = out[pos + 1];
+        const int16_t section_start = getSectionStart(section_id, section_version);
+        const uint8_t section_size = getSectionSize(section_id, section_version);
+        pos += 2;
+
+        if (section_start == -1 || section_size == 0) {
+            // Unknown section shape - bail out; we cannot safely walk further.
+            return {};
+        }
+
+        auto itemIt = sectionIt->items.begin();
+        for (uint8_t val_id = 0; val_id < section_size; val_id++) {
+            if (pos + 1 >= bufLen) {
+                return {};
+            }
+            if (itemIt == sectionIt->items.end()) {
+                // Shape mismatch between supplied edit set and parsed profile.
+                return {};
+            }
+            uint8_t itemDefKey;
+            try {
+                itemDefKey = _profileValues[section_start + val_id].ItemDefinition;
+            } catch (...) {
+                return {};
+            }
+            uint8_t divider;
+            try {
+                divider = itemDefinitions.at(itemDefKey).Divider;
+            } catch (const std::out_of_range&) {
+                divider = 1;
+            }
+            const int32_t scaled = static_cast<int32_t>(itemIt->Value * divider);
+            const int16_t enc = static_cast<int16_t>(scaled);
+            out[pos] = static_cast<uint8_t>((enc >> 8) & 0xff);
+            out[pos + 1] = static_cast<uint8_t>(enc & 0xff);
+            pos += 2;
+            ++itemIt;
+        }
+
+        ++sectionIt;
+    }
+
+    return out;
+}

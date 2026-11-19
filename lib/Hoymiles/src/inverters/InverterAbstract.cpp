@@ -148,6 +148,53 @@ bool InverterAbstract::sendChangeChannelRequest()
     return false;
 }
 
+bool InverterAbstract::sendReactivePowerControlRequest(float /*limit*/, const PowerLimitControlType /*type*/)
+{
+    return false;
+}
+
+bool InverterAbstract::sendPowerFactorControlRequest(float /*pf*/, const PowerLimitControlType /*type*/)
+{
+    return false;
+}
+
+bool InverterAbstract::sendGridProfileWriteRequest(const std::vector<uint8_t>& /*profile*/)
+{
+    return false;
+}
+
+bool InverterAbstract::getGridProfileWriteRunning() const
+{
+    return false;
+}
+
+void InverterAbstract::abortGridProfileWriteRequest()
+{
+}
+
+void InverterAbstract::onGridProfileWriteCompleted(const bool /*success*/)
+{
+}
+
+bool InverterAbstract::sendYieldTotalSetRequest(const uint32_t /*valuesWh*/[4], const uint8_t /*valueCount*/)
+{
+    return false;
+}
+
+bool InverterAbstract::getYieldTotalSetRunning() const
+{
+    return false;
+}
+
+LastCommandSuccess InverterAbstract::getLastYieldTotalSetSuccess() const
+{
+    return CMD_NOK;
+}
+
+void InverterAbstract::onYieldTotalSetCompleted(const bool /*success*/)
+{
+}
+
 HoymilesRadio* InverterAbstract::getRadio()
 {
     return _radio;
@@ -243,6 +290,10 @@ void InverterAbstract::addRxFragment(const uint8_t fragment[], const uint8_t len
 // Returns Zero on Success or the Fragment ID for retransmit or error code
 uint8_t InverterAbstract::verifyAllFragments(CommandAbstract& cmd)
 {
+    if (!cmd.expectsResponse()) {
+        return FRAGMENT_OK;
+    }
+
     // All missing
     if (_rxFragmentLastPacketId == 0) {
         ESP_LOGW(TAG, "All missing");

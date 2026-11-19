@@ -12,5 +12,8 @@ export interface GridProfileSection {
 export interface GridProfileStatus {
     name: string;
     version: string;
+    last_update?: number;
+    matchedPresetId: number;
+    matchesPreset: boolean;
     sections: Array<GridProfileSection>;
 }

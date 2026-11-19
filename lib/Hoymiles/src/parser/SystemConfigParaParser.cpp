@@ -108,6 +108,78 @@ void SystemConfigParaParser::setLastUpdateRequest(const uint32_t lastUpdate)
     setLastUpdate(lastUpdate);
 }
 
+void SystemConfigParaParser::setLastReactivePowerCommandSuccess(const LastCommandSuccess status)
+{
+    _lastReactivePowerCommandSuccess = status;
+}
+
+LastCommandSuccess SystemConfigParaParser::getLastReactivePowerCommandSuccess() const
+{
+    return _lastReactivePowerCommandSuccess;
+}
+
+uint32_t SystemConfigParaParser::getLastReactivePowerUpdateCommand() const
+{
+    return _lastReactivePowerUpdateCommand;
+}
+
+void SystemConfigParaParser::setLastReactivePowerUpdateCommand(const uint32_t lastUpdate)
+{
+    _lastReactivePowerUpdateCommand = lastUpdate;
+    setLastUpdate(lastUpdate);
+}
+
+float SystemConfigParaParser::getReactivePowerPercent() const
+{
+    HOY_SEMAPHORE_TAKE();
+    const float ret = _reactivePowerPercent;
+    HOY_SEMAPHORE_GIVE();
+    return ret;
+}
+
+void SystemConfigParaParser::setReactivePowerPercent(const float value)
+{
+    HOY_SEMAPHORE_TAKE();
+    _reactivePowerPercent = value;
+    HOY_SEMAPHORE_GIVE();
+}
+
+void SystemConfigParaParser::setLastPowerFactorCommandSuccess(const LastCommandSuccess status)
+{
+    _lastPowerFactorCommandSuccess = status;
+}
+
+LastCommandSuccess SystemConfigParaParser::getLastPowerFactorCommandSuccess() const
+{
+    return _lastPowerFactorCommandSuccess;
+}
+
+uint32_t SystemConfigParaParser::getLastPowerFactorUpdateCommand() const
+{
+    return _lastPowerFactorUpdateCommand;
+}
+
+void SystemConfigParaParser::setLastPowerFactorUpdateCommand(const uint32_t lastUpdate)
+{
+    _lastPowerFactorUpdateCommand = lastUpdate;
+    setLastUpdate(lastUpdate);
+}
+
+float SystemConfigParaParser::getPowerFactor() const
+{
+    HOY_SEMAPHORE_TAKE();
+    const float ret = _powerFactor;
+    HOY_SEMAPHORE_GIVE();
+    return ret;
+}
+
+void SystemConfigParaParser::setPowerFactor(const float value)
+{
+    HOY_SEMAPHORE_TAKE();
+    _powerFactor = value;
+    HOY_SEMAPHORE_GIVE();
+}
+
 uint8_t SystemConfigParaParser::getExpectedByteCount() const
 {
     return SYSTEM_CONFIG_PARA_SIZE;

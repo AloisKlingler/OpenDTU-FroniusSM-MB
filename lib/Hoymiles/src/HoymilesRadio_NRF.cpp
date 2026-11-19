@@ -411,6 +411,11 @@ void HoymilesRadio_NRF::sendEsbPacket(CommandAbstract& cmd)
         _inSync = false;
     }
 
+    // Evaluated in HoymilesRadio::handleReceivedPackage() at the end of the RX
+    // period (only for fire-and-forget commands). The RX period is kept on
+    // purpose, so a resend is spread in time instead of following immediately.
+    _txFailed = !result;
+
     _radio->setRetries(0, 0);
     openReadingPipe();
     switchRxCh(true); // switch back to receive mode to be ready for the response.

@@ -39,6 +39,11 @@ const numberFormatTemplate: IntlNumberFormat = {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     },
+    decimalThreeDigits: {
+        style: 'decimal',
+        minimumFractionDigits: 3,
+        maximumFractionDigits: 3,
+    },
     percent: {
         style: 'percent',
     },

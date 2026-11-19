@@ -14,4 +14,8 @@ public:
     void replaceEntries(std::shared_ptr<CommandAbstract> cmd);
 
     uint8_t countSimilarCommands(std::shared_ptr<CommandAbstract> cmd);
+
+    uint8_t removePendingGridProfileWriteCommands(InverterAbstract* inv);
+
+    bool hasGridProfileWriteCommands(InverterAbstract* inv);
 };

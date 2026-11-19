@@ -85,6 +85,16 @@ void HoymilesRadio::handleReceivedPackage()
 
         if (nullptr != inv) {
             CommandAbstract* cmd = _commandQueue.front().get();
+
+            if (_txFailed) {
+                _txFailed = false;
+                if (!cmd->expectsResponse() && cmd->getSendCount() <= cmd->getMaxResendCount()) {
+                    ESP_LOGI(TAG, "TX not acknowledged, sending again (attempt %" PRIu8 ")", cmd->getSendCount() + 1);
+                    sendLastPacketAgain();
+                    return;
+                }
+            }
+
             uint8_t verifyResult = inv->verifyAllFragments(*cmd);
             if (verifyResult == FRAGMENT_ALL_MISSING_RESEND) {
                 ESP_LOGW(TAG, "Nothing received, resend whole request");
@@ -179,6 +189,16 @@ void HoymilesRadio::removeCommands(InverterAbstract* inv)
 uint8_t HoymilesRadio::countSimilarCommands(std::shared_ptr<CommandAbstract> cmd)
 {
     return _commandQueue.countSimilarCommands(cmd);
+}
+
+uint8_t HoymilesRadio::removePendingGridProfileWriteCommands(InverterAbstract* inv)
+{
+    return _commandQueue.removePendingGridProfileWriteCommands(inv);
+}
+
+bool HoymilesRadio::hasGridProfileWriteCommands(InverterAbstract* inv)
+{
+    return _commandQueue.hasGridProfileWriteCommands(inv);
 }
 
 bool HoymilesRadio::isIdle() const

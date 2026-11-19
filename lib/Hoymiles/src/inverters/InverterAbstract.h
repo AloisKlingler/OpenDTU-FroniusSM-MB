@@ -14,6 +14,7 @@
 #include <Arduino.h>
 #include <cstdint>
 #include <list>
+#include <vector>
 
 #define MAX_NAME_LENGTH 32
 
@@ -104,12 +105,24 @@ public:
     virtual bool sendSystemConfigParaRequest() = 0;
     virtual bool sendActivePowerControlRequest(float limit, const PowerLimitControlType type) = 0;
     virtual bool resendActivePowerControlRequest() = 0;
+    virtual bool sendReactivePowerControlRequest(float limit, const PowerLimitControlType type);
+    virtual bool sendPowerFactorControlRequest(float pf, const PowerLimitControlType type);
     virtual bool sendPowerControlRequest(const bool turnOn) = 0;
     virtual bool sendRestartControlRequest() = 0;
     virtual bool resendPowerControlRequest() = 0;
     virtual bool sendChangeChannelRequest();
-    virtual bool sendGridOnProFileParaRequest() = 0;
+    virtual bool sendGridOnProFileParaRequest(const bool viaCommand = false) = 0;
     virtual bool sendRfInfoRequest() = 0;
+
+    virtual bool sendGridProfileWriteRequest(const std::vector<uint8_t>& profile);
+    virtual bool getGridProfileWriteRunning() const;
+    virtual void abortGridProfileWriteRequest();
+    virtual void onGridProfileWriteCompleted(const bool success);
+
+    virtual bool sendYieldTotalSetRequest(const uint32_t valuesWh[4], const uint8_t valueCount);
+    virtual bool getYieldTotalSetRunning() const;
+    virtual LastCommandSuccess getLastYieldTotalSetSuccess() const;
+    virtual void onYieldTotalSetCompleted(const bool success);
 
     // This feature will limit the AC output instead of limiting the DC inputs.
     virtual bool supportsPowerDistributionLogic() = 0;
