@@ -66,6 +66,7 @@ void WebApiGridProfileClass::init(AsyncWebServer& server, Scheduler& scheduler)
     server.on("/api/gridprofile/rawdata",        HTTP_GET,  static_cast<ArRequestHandlerFunction>(std::bind(&WebApiGridProfileClass::onGridProfileRawdata,      this, _1)));
     server.on("/api/gridprofile/knownprofiles",  HTTP_GET,  static_cast<ArRequestHandlerFunction>(std::bind(&WebApiGridProfileClass::onGridProfileKnownPresets, this, _1)));
     server.on("/api/gridprofile/writestatus",    HTTP_GET,  static_cast<ArRequestHandlerFunction>(std::bind(&WebApiGridProfileClass::onGridProfileWriteStatus,  this, _1)));
+    server.on("/api/gridprofile/decode",         HTTP_POST, static_cast<ArRequestHandlerFunction>(std::bind(&WebApiGridProfileClass::onGridProfileDecodePost,   this, _1)));
     server.on("/api/gridprofile/write",          HTTP_POST, static_cast<ArRequestHandlerFunction>(std::bind(&WebApiGridProfileClass::onGridProfileWritePost,    this, _1)));
     server.on("/api/gridprofile/abort",          HTTP_POST, static_cast<ArRequestHandlerFunction>(std::bind(&WebApiGridProfileClass::onGridProfileAbortPost,    this, _1)));
     server.on("/api/gridprofile/refresh",        HTTP_POST, static_cast<ArRequestHandlerFunction>(std::bind(&WebApiGridProfileClass::onGridProfileRefreshPost,  this, _1)));
@@ -86,10 +87,14 @@ void WebApiGridProfileClass::onGridProfileStatus(AsyncWebServerRequest* request)
         root["name"] = inv->GridProfile()->getProfileName();
         root["version"] = inv->GridProfile()->getProfileVersion();
         root["last_update"] = inv->GridProfile()->getLastUpdate();
+        root["inverter_type"] = inv->typeName();
 
         int32_t matchedPresetId = -1;
         bool matchesPreset = false;
         auto raw = inv->GridProfile()->getRawData();
+        // The inverter appends its own CRC16 to the profile, the stored presets
+        // do not contain one. Compare without it (only if it is a valid CRC).
+        raw.resize(GridProfileParser::lengthWithoutCrc(raw.data(), raw.size()));
         if (raw.size() >= 2) {
             for (size_t i = 0; i < kGridProfilePresetsCount; i++) {
                 const auto& p = kGridProfilePresets[i];
@@ -203,6 +208,62 @@ void WebApiGridProfileClass::onGridProfileWriteStatus(AsyncWebServerRequest* req
     WebApi.sendJsonResponse(request, response, __FUNCTION__, __LINE__);
 }
 
+// Decodes a profile blob with the parser of the device without writing anything.
+// Used by the web UI to validate a candidate profile and to show what would change.
+void WebApiGridProfileClass::onGridProfileDecodePost(AsyncWebServerRequest* request)
+{
+    if (!WebApi.checkCredentials(request)) {
+        return;
+    }
+
+    AsyncJsonResponse* response = new AsyncJsonResponse();
+    JsonDocument root;
+    if (!WebApi.parseRequestData(request, response, root)) {
+        return;
+    }
+
+    auto& retMsg = response->getRoot();
+
+    if (!root["profile_hex"].is<String>()) {
+        retMsg["message"] = "profile_hex missing!";
+        retMsg["code"] = WebApiError::GenericValueMissing;
+        WebApi.sendJsonResponse(request, response, __FUNCTION__, __LINE__);
+        return;
+    }
+
+    std::vector<uint8_t> bytes;
+    if (!decodeHexString(root["profile_hex"].as<String>(), bytes) || bytes.size() < 7 || bytes.size() > 200) {
+        retMsg["message"] = "profile_hex is not a valid hex string of a plausible length.";
+        retMsg["code"] = WebApiError::GridProfileInvalidPayload;
+        WebApi.sendJsonResponse(request, response, __FUNCTION__, __LINE__);
+        return;
+    }
+
+    bool complete = false;
+    auto sections = GridProfileParser::decode(bytes.data(), bytes.size(), &complete);
+
+    retMsg["type"] = "success";
+    retMsg["valid"] = complete;
+    retMsg["length"] = static_cast<uint32_t>(bytes.size());
+    retMsg["name"] = GridProfileParser::nameFromHeader(bytes[0], bytes[1]);
+    retMsg["version"] = GridProfileParser::versionFromHeader(bytes[2], bytes[3]);
+
+    auto jsonSections = retMsg["sections"].to<JsonArray>();
+    for (auto& section : sections) {
+        auto jsonSection = jsonSections.add<JsonObject>();
+        jsonSection["name"] = section.SectionName;
+        auto jsonItems = jsonSection["items"].to<JsonArray>();
+        for (auto& item : section.items) {
+            auto jsonItem = jsonItems.add<JsonObject>();
+            jsonItem["n"] = item.Name;
+            jsonItem["u"] = item.Unit;
+            jsonItem["v"] = item.Value;
+        }
+    }
+
+    WebApi.sendJsonResponse(request, response, __FUNCTION__, __LINE__);
+}
+
 void WebApiGridProfileClass::onGridProfileWritePost(AsyncWebServerRequest* request)
 {
     if (!WebApi.checkCredentials(request)) {
@@ -272,6 +333,17 @@ void WebApiGridProfileClass::onGridProfileWritePost(AsyncWebServerRequest* reque
         if (!decodeHexString(root["profile_hex"].as<String>(), profileBytes)) {
             retMsg["message"] = "profile_hex is not a valid hex string.";
             retMsg["code"] = WebApiError::GridProfileInvalidPayload;
+            WebApi.sendJsonResponse(request, response, __FUNCTION__, __LINE__);
+            return;
+        }
+
+        // A raw profile is only accepted if the parser fully understands it.
+        // The payload must not contain a CRC16, the write command adds it.
+        bool complete = false;
+        GridProfileParser::decode(profileBytes.data(), profileBytes.size(), &complete);
+        if (!complete) {
+            retMsg["message"] = "Profile cannot be decoded completely (unknown section, wrong length or CRC16 included).";
+            retMsg["code"] = WebApiError::GridProfileNotDecodable;
             WebApi.sendJsonResponse(request, response, __FUNCTION__, __LINE__);
             return;
         }

@@ -73,6 +73,15 @@
                     </div>
                 </div>
 
+                <GridProfileWikiPicker
+                    :inverterType="gridProfileList.inverter_type || ''"
+                    :currentName="gridProfileList.name"
+                    :currentRaw="gridProfileRawList.raw"
+                    :currentSections="gridProfileList.sections || []"
+                    :busy="writeBusy"
+                    @apply="applyWikiProfile"
+                />
+
                 <div class="row g-2 mt-2">
                     <div class="col-md-8">
                         <div class="form-check form-switch">
@@ -239,6 +248,7 @@ import type {
 import { authHeader, handleResponse } from '@/utils/authentication';
 import { BIconInfoSquare } from 'bootstrap-icons-vue';
 import { defineComponent, type PropType } from 'vue';
+import GridProfileWikiPicker from './GridProfileWikiPicker.vue';
 import StatusBadge from './StatusBadge.vue';
 
 interface EditedItem {
@@ -294,6 +304,7 @@ export default defineComponent({
     components: {
         BootstrapAlert,
         BIconInfoSquare,
+        GridProfileWikiPicker,
         StatusBadge,
     },
     emits: ['refresh'],
@@ -486,6 +497,14 @@ export default defineComponent({
             this.postWrite({
                 serial: this.inverterSerial,
                 preset_id: this.selectedPresetId,
+            });
+        },
+        applyWikiProfile(profileHex: string) {
+            // The picker already validated the profile with the DTU and asked for confirmation.
+            if (!this.inverterSerial) return;
+            this.postWrite({
+                serial: this.inverterSerial,
+                profile_hex: profileHex,
             });
         },
         applyEdited() {

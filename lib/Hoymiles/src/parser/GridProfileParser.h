@@ -52,6 +52,21 @@ public:
 
     std::vector<uint8_t> encodeUpdatedValues(const std::list<GridProfileSection_t>& sections) const;
 
+    // Stateless helpers that work on an arbitrary profile buffer instead of the
+    // profile stored in this parser. They never touch the stored profile.
+    static String nameFromHeader(const uint8_t lIdx, const uint8_t hIdx);
+    static String versionFromHeader(const uint8_t verHigh, const uint8_t verLow);
+
+    // Decodes a profile buffer. If 'complete' is given it is set to true only
+    // when the buffer is a well-formed profile: every section is known, all
+    // values are defined and the sections consume the buffer exactly. The
+    // buffer must not contain the trailing CRC16 (see lengthWithoutCrc()).
+    static std::list<GridProfileSection_t> decode(const uint8_t* data, const size_t len, bool* complete = nullptr);
+
+    // Returns 'len' minus 2 if the buffer ends with a valid CRC16 (Modbus,
+    // big endian) over the preceding bytes, otherwise returns 'len' unchanged.
+    static size_t lengthWithoutCrc(const uint8_t* data, const size_t len);
+
 private:
     static uint8_t getSectionSize(const uint8_t section_id, const uint8_t section_version);
     static int16_t getSectionStart(const uint8_t section_id, const uint8_t section_version);

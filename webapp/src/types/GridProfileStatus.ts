@@ -13,6 +13,8 @@ export interface GridProfileStatus {
     name: string;
     version: string;
     last_update?: number;
+    /** Model of the inverter, e.g. "HMT-2250-6T". */
+    inverter_type?: string;
     matchedPresetId: number;
     matchesPreset: boolean;
     sections: Array<GridProfileSection>;

@@ -16,6 +16,20 @@ export interface GridProfileWriteStatus {
     queue_has_write: boolean;
 }
 
+/** Result of decoding a profile blob with the parser of the device (no write). */
+export interface GridProfileDecodeResponse {
+    type?: string;
+    /** True only if the device fully understands the profile. */
+    valid: boolean;
+    length: number;
+    name: string;
+    version: string;
+    sections: Array<{
+        name: string;
+        items: Array<{ n: string; u: string; v: number }>;
+    }>;
+}
+
 export interface GridProfileWriteRequest {
     serial: string;
     preset_id?: number;

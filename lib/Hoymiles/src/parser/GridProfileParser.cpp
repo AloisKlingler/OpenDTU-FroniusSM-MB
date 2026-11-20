@@ -20,6 +20,7 @@ ID   Source Addr   Target Addr   Idx  Profile ID   Profile Version   Section ID 
 The number of values depends on the respective section and its version. After the last value of a section follows the next section id.
 */
 #include "GridProfileParser.h"
+#include "../crc.h"
 #include <cstring>
 #include <esp_log.h>
 #include <frozen/map.h>
@@ -387,23 +388,48 @@ void GridProfileParser::appendFragment(const uint8_t offset, const uint8_t* payl
     _gridProfileLength += len;
 }
 
-String GridProfileParser::getProfileName() const
+String GridProfileParser::nameFromHeader(const uint8_t lIdx, const uint8_t hIdx)
 {
     for (auto& ptype : _profileTypes) {
-        if (ptype.lIdx == _payloadGridProfile[0] && ptype.hIdx == _payloadGridProfile[1]) {
+        if (ptype.lIdx == lIdx && ptype.hIdx == hIdx) {
             return ptype.Name;
         }
     }
     return "Unknown";
 }
 
-String GridProfileParser::getProfileVersion() const
+String GridProfileParser::versionFromHeader(const uint8_t verHigh, const uint8_t verLow)
 {
     char buffer[10];
-    HOY_SEMAPHORE_TAKE();
-    snprintf(buffer, sizeof(buffer), "%d.%d.%d", (_payloadGridProfile[2] >> 4) & 0x0f, _payloadGridProfile[2] & 0x0f, _payloadGridProfile[3]);
-    HOY_SEMAPHORE_GIVE();
+    snprintf(buffer, sizeof(buffer), "%d.%d.%d", (verHigh >> 4) & 0x0f, verHigh & 0x0f, verLow);
     return buffer;
+}
+
+String GridProfileParser::getProfileName() const
+{
+    return nameFromHeader(_payloadGridProfile[0], _payloadGridProfile[1]);
+}
+
+String GridProfileParser::getProfileVersion() const
+{
+    HOY_SEMAPHORE_TAKE();
+    const uint8_t verHigh = _payloadGridProfile[2];
+    const uint8_t verLow = _payloadGridProfile[3];
+    HOY_SEMAPHORE_GIVE();
+    return versionFromHeader(verHigh, verLow);
+}
+
+size_t GridProfileParser::lengthWithoutCrc(const uint8_t* data, const size_t len)
+{
+    // 4 header bytes + at least one byte of payload + 2 CRC bytes
+    if (data == nullptr || len < 7 || len > 255) {
+        return len;
+    }
+    const uint16_t expected = static_cast<uint16_t>((data[len - 2] << 8) | data[len - 1]);
+    if (crc16(data, static_cast<uint8_t>(len - 2)) == expected) {
+        return len - 2;
+    }
+    return len;
 }
 
 std::vector<uint8_t> GridProfileParser::getRawData() const
@@ -419,17 +445,27 @@ std::vector<uint8_t> GridProfileParser::getRawData() const
 
 std::list<GridProfileSection_t> GridProfileParser::getProfile() const
 {
+    return decode(_payloadGridProfile, _gridProfileLength);
+}
+
+std::list<GridProfileSection_t> GridProfileParser::decode(const uint8_t* data, const size_t len, bool* complete)
+{
     std::list<GridProfileSection_t> l;
 
-    uint16_t pos = 4;
-    while (pos < _gridProfileLength) {
-        if (_gridProfileLength - pos < 2) {
+    // Every anomaly clears this flag. The parsing itself behaves exactly as it
+    // always did, so the profile view of an inverter is not affected by it.
+    bool wellFormed = (data != nullptr) && (len > 6);
+
+    size_t pos = 4;
+    while (data != nullptr && pos < len) {
+        if (len - pos < 2) {
             ESP_LOGW(TAG, "grid profile contains an incomplete section header");
+            wellFormed = false;
             break;
         }
 
-        const uint8_t section_id = _payloadGridProfile[pos];
-        const uint8_t section_version = _payloadGridProfile[pos + 1];
+        const uint8_t section_id = data[pos];
+        const uint8_t section_version = data[pos + 1];
         const int16_t section_start = getSectionStart(section_id, section_version);
         const uint8_t section_size = getSectionSize(section_id, section_version);
         pos += 2;
@@ -439,17 +475,26 @@ std::list<GridProfileSection_t> GridProfileParser::getProfile() const
             section.SectionName = profileSection.at(section_id).data();
         } catch (const std::out_of_range&) {
             section.SectionName = "Unknown";
+            wellFormed = false;
             break;
         }
 
         if (section_start == -1) {
             section.SectionName = "Unknown";
+            wellFormed = false;
             break;
         }
 
+        // getSectionSize() returns 0 for a section id / version combination
+        // we have no value layout for. The walk cannot be trusted any further.
+        if (section_size == 0) {
+            wellFormed = false;
+        }
+
         if (static_cast<size_t>(section_start) + section_size > _profileValues.size()
-            || static_cast<size_t>(section_size) * 2 > _gridProfileLength - pos) {
+            || static_cast<size_t>(section_size) * 2 > len - pos) {
             ESP_LOGW(TAG, "grid profile contains an incomplete section");
+            wellFormed = false;
             break;
         }
 
@@ -461,11 +506,12 @@ std::list<GridProfileSection_t> GridProfileParser::getProfile() const
                 // profile version). Stop parsing instead of throwing an
                 // uncaught exception.
                 ESP_LOGW(TAG, "grid profile contains an unknown item definition");
+                wellFormed = false;
                 break;
             }
             const auto& itemDefinition = itemIterator->second;
 
-            float value = static_cast<int16_t>((_payloadGridProfile[pos] << 8) | _payloadGridProfile[pos + 1]);
+            float value = static_cast<int16_t>((data[pos] << 8) | data[pos + 1]);
             value /= itemDefinition.Divider;
 
             GridProfileItem_t v;
@@ -478,6 +524,10 @@ std::list<GridProfileSection_t> GridProfileParser::getProfile() const
         }
 
         l.push_back(section);
+    }
+
+    if (complete != nullptr) {
+        *complete = wellFormed && (pos == len);
     }
 
     return l;
@@ -536,8 +586,13 @@ std::vector<uint8_t> GridProfileParser::encodeUpdatedValues(const std::list<Grid
 
     HOY_SEMAPHORE_TAKE();
     out.assign(_payloadGridProfile, _payloadGridProfile + _gridProfileLength);
-    const uint16_t bufLen = _gridProfileLength;
     HOY_SEMAPHORE_GIVE();
+
+    // The stored profile ends with the inverter's own CRC16. The write command
+    // computes and appends a fresh CRC16 itself, so the old one must not be
+    // sent along. It is only dropped when it is verifiably a CRC of the rest.
+    out.resize(lengthWithoutCrc(out.data(), out.size()));
+    const uint16_t bufLen = static_cast<uint16_t>(out.size());
 
     auto sectionIt = sections.begin();
     uint16_t pos = 4;

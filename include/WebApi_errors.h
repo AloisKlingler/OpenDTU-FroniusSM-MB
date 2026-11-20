@@ -109,6 +109,7 @@ enum WebApiError {
     GridProfileUnknownPreset,
     GridProfileEncodeFailed,
     GridProfileRefreshQueued,
+    GridProfileNotDecodable,
 
     ReactivePowerBase = 14000,
     ReactivePowerSerialZero,
