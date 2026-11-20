@@ -137,6 +137,16 @@ export function normalizeModel(raw: string): string {
     return /^(HMS|HMT|HM)-\d{3,4}(-[A-Z0-9]+)*$/.test(s) ? s : '';
 }
 
+/**
+ * Canonical model of a connected inverter. Unlike normalizeModel() this never
+ * guesses: a name that covers several models ("HMT-1800/2250-6T" is what the
+ * firmware reports for a shared housing) yields an empty string, because
+ * taking one of them would show the profiles of the wrong inverter.
+ */
+export function normalizeInverterType(raw: string): string {
+    return raw.includes('/') ? '' : normalizeModel(raw);
+}
+
 /** "HMT-2250-6T" -> "HMT-2250" (drops the MPPT / variant suffix). */
 export function modelFamily(model: string): string {
     return model.replace(/(-(\d+T|T\d+|NA|V\d+))+$/, '');
@@ -226,7 +236,7 @@ function pickLabel(sources: WikiSource[], header: string): string {
  * same family are returned; profiles of unrelated models are never offered.
  */
 export function buildCandidates(rows: WikiRow[], inverterType: string): ProfileCandidate[] {
-    const model = normalizeModel(inverterType);
+    const model = normalizeInverterType(inverterType);
     if (!model) {
         return [];
     }

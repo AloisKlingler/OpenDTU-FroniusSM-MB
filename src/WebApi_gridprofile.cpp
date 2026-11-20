@@ -87,7 +87,11 @@ void WebApiGridProfileClass::onGridProfileStatus(AsyncWebServerRequest* request)
         root["name"] = inv->GridProfile()->getProfileName();
         root["version"] = inv->GridProfile()->getProfileVersion();
         root["last_update"] = inv->GridProfile()->getLastUpdate();
-        root["inverter_type"] = inv->typeName();
+        // Prefer the exact model derived from the hardware ID (e.g. "HMT-2250-6T").
+        // typeName() only describes the housing and can cover several models
+        // ("HMT-1800/2250-6T"). It is the fallback while the device info is unknown.
+        const String hwModel = inv->DevInfo()->getHwModelName();
+        root["inverter_type"] = hwModel.isEmpty() ? inv->typeName() : hwModel;
 
         int32_t matchedPresetId = -1;
         bool matchesPreset = false;

@@ -291,7 +291,8 @@
         "WikiExportTitle": "Contribuer : copier le profil actif comme ligne du tableau du wiki",
         "WikiExportHelp": "Collez cette ligne dans le tableau de la page du wiki (Modifier la page). Complétez le pays, la version du firmware de l'onduleur et, si vous le connaissez, le nom du profil.",
         "WikiCopy": "Copier",
-        "WikiCopied": "Copié"
+        "WikiCopied": "Copié",
+        "WikiModelAmbiguous": "Le modèle \"{model}\" ne peut pas être associé à une seule désignation du wiki (il peut couvrir plusieurs modèles), aucun profil n'est donc proposé. Le modèle exact est lu automatiquement depuis l'onduleur, rouvrez cette boîte de dialogue dans un instant."
     },
     "systeminfo": {
         "SystemInfo": "Informations sur le système",

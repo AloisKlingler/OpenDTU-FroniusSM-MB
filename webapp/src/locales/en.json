@@ -291,7 +291,8 @@
         "WikiExportTitle": "Contribute: copy the active profile as wiki table row",
         "WikiExportHelp": "Paste this row into the table of the wiki page (Edit page). Please fill in the country, the inverter firmware version and, if you know it, the profile name.",
         "WikiCopy": "Copy",
-        "WikiCopied": "Copied"
+        "WikiCopied": "Copied",
+        "WikiModelAmbiguous": "The model \"{model}\" cannot be matched to exactly one wiki model name (it may cover several models), so no profiles are suggested. The exact model is read from the inverter automatically, please reopen this dialog in a moment."
     },
     "systeminfo": {
         "SystemInfo": "System Info",

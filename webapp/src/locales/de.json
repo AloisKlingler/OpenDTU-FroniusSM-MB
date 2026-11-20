@@ -291,7 +291,8 @@
         "WikiExportTitle": "Beitragen: aktives Profil als Wiki-Tabellenzeile kopieren",
         "WikiExportHelp": "Füge diese Zeile in die Tabelle der Wiki-Seite ein (Seite bearbeiten). Bitte ergänze Land, Firmware-Version des Wechselrichters und, falls bekannt, den Profilnamen.",
         "WikiCopy": "Kopieren",
-        "WikiCopied": "Kopiert"
+        "WikiCopied": "Kopiert",
+        "WikiModelAmbiguous": "Das Modell \"{model}\" lässt sich keiner eindeutigen Modellbezeichnung im Wiki zuordnen (es kann mehrere Modelle umfassen), deshalb werden keine Profile vorgeschlagen. Das genaue Modell wird automatisch vom Wechselrichter gelesen, bitte öffne diesen Dialog in einem Moment erneut."
     },
     "systeminfo": {
         "SystemInfo": "Systeminformationen",

@@ -30,7 +30,13 @@
         <div v-if="wiki && wiki.error" class="alert alert-warning py-2">
             {{ $t('gridprofile.WikiFallback', { reason: wiki.error }) }}
         </div>
-        <div v-if="!inverterType" class="alert alert-info py-2">{{ $t('gridprofile.WikiNoModel') }}</div>
+        <div v-if="!modelKnown" class="alert alert-info py-2">
+            {{
+                inverterType
+                    ? $t('gridprofile.WikiModelAmbiguous', { model: inverterType })
+                    : $t('gridprofile.WikiNoModel')
+            }}
+        </div>
 
         <template v-else>
             <div v-if="loading" class="text-muted">{{ $t('gridprofile.WikiLoading') }}</div>
@@ -191,7 +197,7 @@ import {
     bytesToHex,
     diffSections,
     modelFamily,
-    normalizeModel,
+    normalizeInverterType,
     stripCrc,
     type DiffItem,
     type ProfileCandidate,
@@ -234,8 +240,11 @@ export default defineComponent({
         };
     },
     computed: {
+        modelKnown(): boolean {
+            return normalizeInverterType(this.inverterType) !== '';
+        },
         family(): string {
-            return modelFamily(normalizeModel(this.inverterType));
+            return modelFamily(normalizeInverterType(this.inverterType));
         },
         candidates(): ProfileCandidate[] {
             return this.wiki ? buildCandidates(this.wiki.rows, this.inverterType) : [];
@@ -283,7 +292,7 @@ export default defineComponent({
             const country = /^([A-Z]{2})\s-\s/.exec(this.currentName)?.[1] ?? 'XX';
             return buildWikiRow({
                 country,
-                model: normalizeModel(this.inverterType) || this.inverterType,
+                model: normalizeInverterType(this.inverterType) || this.inverterType,
                 profile: this.currentRaw,
                 name: this.currentName,
                 fw: '',
